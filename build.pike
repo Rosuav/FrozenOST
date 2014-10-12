@@ -70,11 +70,9 @@ int main()
 		write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
 		exec(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}));
 	}
-	//Two hacks:
-	//1) Incorporate the original (tweaked) sound track, for reference. Just remove that parameter when done.
-	//2) Cut short the avconving after creating a short file - the -t and its next arg. Again, just remove it when done.
+	//Note that the original (tweaked) sound track is incorporated, for reference.
+	//Remove that parameter when it's no longer needed - or keep it, as a feature.
 	write("Rebuilding %s\n",combined_soundtrack);
-	//exec(({"sox","-S","-m","-v",".5","??.wav",tweaked_soundtrack,combined_soundtrack})); //Note that sox will (unusually) do its own globbing, so we don't have to
 	//Begin code cribbed from Process.run()
 	Stdio.File mystderr = Stdio.File();
 	object p=Process.create_process(({"sox","-S","-m","-v",".5","??.wav",tweaked_soundtrack,combined_soundtrack}),(["stderr":mystderr->pipe()]));
@@ -86,7 +84,10 @@ int main()
 	p->wait();
 	//End code from Process.run()
 	rm(outputfile);
-	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-ss","0:17:00","-t","0:02:00","-c:v","copy",outputfile}));
+	array(string) times=({ });
+	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:] %[0-9:]",string start,string len) && start && start!="")
+		times=({"-ss",start,"-t",len||"0:01:00"});
+	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0"})+times+({"-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
 }
