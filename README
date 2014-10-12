@@ -1,0 +1,6 @@
+Process of building up an OST-only version of Frozen :)
+
+Most of the grunt-work is defined by build.pike, based on track definitions in
+tracks. It will create a whole bunch of intermediate .wav files in the current
+directory, which can be deleted at any time; they are, obviously, gitignored.
+
