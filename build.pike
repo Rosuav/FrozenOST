@@ -35,6 +35,7 @@ int main()
 	//Note that this copes poorly with insertions/deletions/moves, and will
 	//see a large number of changed tracks, and simply recreate them all.
 	array(string) dir=get_dir(),ostmp3dir;
+	int changed;
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
@@ -70,6 +71,7 @@ int main()
 		write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
 		//eg: sox 111* 01.wav delay 0:00:05 0:00:05
 		exec(({"sox",infn,outfn,"delay",start,start}));
+		changed=1;
 	}
 	if (!file_stat(tweaked_soundtrack))
 	{
@@ -81,21 +83,24 @@ int main()
 		write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
 		exec(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}));
 	}
-	//Note that the original (tweaked) sound track is incorporated, for reference.
-	//Remove that parameter when it's no longer needed - or keep it, as a feature.
-	write("Rebuilding %s\n",combined_soundtrack);
-	int t=time();
-	//Begin code cribbed from Process.run()
-	Stdio.File mystderr = Stdio.File();
-	object p=Process.create_process(({"sox","-S","-m","-v",".5","??.wav",tweaked_soundtrack,combined_soundtrack}),(["stderr":mystderr->pipe()]));
-	Pike.SmallBackend backend = Pike.SmallBackend();
-	mystderr->set_backend(backend);
-	mystderr->set_read_callback(lambda( mixed i, string data) {write(replace(data,"\n","\r"));}); //Write everything on one line, thus disposing of the unwanted spam :)
-	mystderr->set_close_callback(lambda () {mystderr = 0;});
-	while (mystderr) backend(1.0);
-	p->wait();
-	//End code from Process.run()
-	write("\n-- done in %.2fs\n",time(t));
+	if (changed)
+	{
+		//Note that the original (tweaked) sound track is incorporated, for reference.
+		//Remove that parameter when it's no longer needed - or keep it, as a feature.
+		write("Rebuilding %s\n",combined_soundtrack);
+		int t=time();
+		//Begin code cribbed from Process.run()
+		Stdio.File mystderr = Stdio.File();
+		object p=Process.create_process(({"sox","-S","-m","-v",".5","??.wav",tweaked_soundtrack,combined_soundtrack}),(["stderr":mystderr->pipe()]));
+		Pike.SmallBackend backend = Pike.SmallBackend();
+		mystderr->set_backend(backend);
+		mystderr->set_read_callback(lambda( mixed i, string data) {write(replace(data,"\n","\r"));}); //Write everything on one line, thus disposing of the unwanted spam :)
+		mystderr->set_close_callback(lambda () {mystderr = 0;});
+		while (mystderr) backend(1.0);
+		p->wait();
+		//End code from Process.run()
+		write("\n-- done in %.2fs\n",time(t));
+	}
 	rm(outputfile);
 	array(string) times=({ });
 	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:] %[0-9:]",string start,string len) && start && start!="")
