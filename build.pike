@@ -43,6 +43,7 @@ int main()
 			infn=fn-".mp3"+".wav";
 			write("Creating %s from MP3\n",infn);
 			Process.create_process(({"avconv","-i",ost_mp3+"/"+fn,infn}))->wait();
+			dir=get_dir(); if (!has_value(dir,infn)) exit(1,"Was not able to create %s - exiting\n",infn);
 		}
 		else infn=in[0];
 
