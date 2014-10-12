@@ -23,8 +23,8 @@ int main()
 {
 	int start=time();
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
-	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.]"); //Parsed: ({file prefix, start time})
-	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start"
+	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]})
+	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
 	array prevtracks;
 	catch {prevtracks=decode_value(Stdio.read_file("prevtracks"));};
 	if (!prevtracks) prevtracks=({ });
@@ -41,17 +41,28 @@ int main()
 		if (tracks[i]==prevtracks[i] && has_value(dir,outfn)) continue; //Unchanged and file exists.
 		rm(outfn);
 		if (tracks[i]=="") {write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
-		[string prefix,string start]=tracks[i]/" ";
+		array parts=tracks[i]/" ";
+		string prefix=parts[0],start=parts[1];
+		string partial_start,partial_len;
+		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
+		{
+			case 'S': partial_start=tag[1..]; prefix+=tag; break;
+			case 'L': partial_len=tag[1..]; prefix+=tag; break;
+			default: break;
+		}
 
 		//Find and maybe create the .wav version of the input file we want
-		array(string) in=glob(prefix+"*.wav",dir); string infn;
+		array(string) in=glob(prefix+" *.wav",dir); string infn;
 		if (!sizeof(in))
 		{
 			if (!ostmp3dir) ostmp3dir=get_dir(ost_mp3); //Cache on first load - it shouldn't change
-			string fn=glob(prefix+"*.mp3",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
-			infn=fn-".mp3"+".wav";
+			string fn=glob(parts[0]+"*.mp3",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
+			infn=prefix+fn[3..<3]+"wav";
 			write("Creating %s from MP3\n",infn);
-			exec(({"avconv","-i",ost_mp3+"/"+fn,infn}));
+			array(string) args=({"avconv","-i",ost_mp3+"/"+fn});
+			if (partial_start) args+=({"-ss",partial_start});
+			if (partial_len) args+=({"-t",partial_len});
+			exec(args+({infn}));
 			dir=get_dir(); if (!has_value(dir,infn)) exit(1,"Was not able to create %s - exiting\n",infn);
 		}
 		else infn=in[0];
