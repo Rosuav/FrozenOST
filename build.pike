@@ -11,6 +11,14 @@ constant combined_soundtrack="soundtrack.wav";
 
 constant outputfile="Frozen plus OST.mkv";
 
+void exec(array(string) cmd)
+{
+	int t=time();
+	Process.create_process(cmd)->wait();
+	float tm=time(t);
+	if (tm>5.0) write("-- done in %.2fs\n",tm);
+}
+
 int main()
 {
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
@@ -42,31 +50,31 @@ int main()
 			string fn=glob(prefix+"*.mp3",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
 			infn=fn-".mp3"+".wav";
 			write("Creating %s from MP3\n",infn);
-			Process.create_process(({"avconv","-i",ost_mp3+"/"+fn,infn}))->wait();
+			exec(({"avconv","-i",ost_mp3+"/"+fn,infn}));
 			dir=get_dir(); if (!has_value(dir,infn)) exit(1,"Was not able to create %s - exiting\n",infn);
 		}
 		else infn=in[0];
 
 		write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
 		//eg: sox 111* 01.wav delay 0:00:05 0:00:05
-		Process.create_process(({"sox",infn,outfn,"delay",start,start}))->wait();
+		exec(({"sox",infn,outfn,"delay",start,start}));
 	}
 	if (!file_stat(tweaked_soundtrack))
 	{
 		if (!file_stat(orig_soundtrack))
 		{
 			write("Rebuilding %s (ripping from %s)\n",orig_soundtrack,movie);
-			Process.create_process(({"avconv","-i",movie,orig_soundtrack}))->wait();
+			exec(({"avconv","-i",movie,orig_soundtrack}));
 		}
 		write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
-		Process.create_process(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}))->wait();
+		exec(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}));
 	}
 	//Two hacks:
 	//1) Incorporate the original (tweaked) sound track, for reference. Just remove that parameter when done.
 	//2) Cut short the avconving after creating a short file - the -t and its next arg. Again, just remove it when done.
 	write("Rebuilding %s\n",combined_soundtrack);
-	Process.create_process(({"sox","-m","-v","1","??.wav",tweaked_soundtrack,combined_soundtrack}))->wait(); //Note that sox will (unusually) do its own globbing, so we don't have to
+	exec(({"sox","-m","-v","1","??.wav",tweaked_soundtrack,combined_soundtrack})); //Note that sox will (unusually) do its own globbing, so we don't have to
 	rm(outputfile);
-	Process.create_process(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-t","0:03:30","-c:v","copy",outputfile}))->wait();
+	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-t","0:03:30","-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks));
 }
