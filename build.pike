@@ -73,6 +73,7 @@ int main()
 	//Note that the original (tweaked) sound track is incorporated, for reference.
 	//Remove that parameter when it's no longer needed - or keep it, as a feature.
 	write("Rebuilding %s\n",combined_soundtrack);
+	int t=time();
 	//Begin code cribbed from Process.run()
 	Stdio.File mystderr = Stdio.File();
 	object p=Process.create_process(({"sox","-S","-m","-v",".5","??.wav",tweaked_soundtrack,combined_soundtrack}),(["stderr":mystderr->pipe()]));
@@ -83,6 +84,7 @@ int main()
 	while (mystderr) backend(1.0);
 	p->wait();
 	//End code from Process.run()
+	write("\n-- done in %.2fs\n",time(t));
 	rm(outputfile);
 	array(string) times=({ });
 	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:] %[0-9:]",string start,string len) && start && start!="")
