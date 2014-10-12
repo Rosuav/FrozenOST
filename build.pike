@@ -6,7 +6,7 @@ constant ost_mp3="../Downloads/Various.Artists-Frozen.OST-2013.320kbps-FF"; //Di
 
 //Intermediate file names
 constant orig_soundtrack="MovieSoundTrack.wav";
-constant tweaked_soundtrack="MovieSoundTrack_tweaked.wav"; //bitratefixed
+constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav";
 constant combined_soundtrack="soundtrack.wav";
 
 constant outputfile="Frozen plus OST.mkv";
@@ -50,10 +50,20 @@ int main()
 		//eg: sox 111* 01.wav delay 0:00:05 0:00:05
 		Process.create_process(({"sox",infn,outfn,"delay",start,start}))->wait();
 	}
+	if (!file_stat(tweaked_soundtrack))
+	{
+		if (!file_stat(orig_soundtrack))
+		{
+			write("Rebuilding %s (ripping from %s)\n",orig_soundtrack,movie);
+			Process.create_process(({"avconv","-i",movie,orig_soundtrack}))->wait();
+		}
+		write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
+		Process.create_process(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}))->wait();
+	}
 	//Two hacks:
 	//1) Incorporate the original (tweaked) sound track, for reference. Just remove that parameter when done.
 	//2) Cut short the avconving after creating a short file - the -t and its next arg. Again, just remove it when done.
-	write("Rebuilding soundtrack.wav\n");
+	write("Rebuilding %s\n",combined_soundtrack);
 	Process.create_process(({"sox","-m","-v","1","??.wav",tweaked_soundtrack,combined_soundtrack}))->wait(); //Note that sox will (unusually) do its own globbing, so we don't have to
 	rm(outputfile);
 	Process.create_process(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-t","0:03:30","-c:v","copy",outputfile}))->wait();
