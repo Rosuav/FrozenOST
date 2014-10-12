@@ -76,7 +76,7 @@ int main()
 	write("Rebuilding %s\n",combined_soundtrack);
 	exec(({"sox","-S","-m","-v","1","??.wav",tweaked_soundtrack,combined_soundtrack})); //Note that sox will (unusually) do its own globbing, so we don't have to
 	rm(outputfile);
-	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-ss","0:11:30","-t","0:01:00","-c:v","copy",outputfile}));
+	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-ss","0:13:00","-t","0:01:00","-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks));
 	write("Total time: %.2fs\n",time(start));
 }
