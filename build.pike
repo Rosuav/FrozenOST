@@ -73,8 +73,8 @@ int main()
 	//1) Incorporate the original (tweaked) sound track, for reference. Just remove that parameter when done.
 	//2) Cut short the avconving after creating a short file - the -t and its next arg. Again, just remove it when done.
 	write("Rebuilding %s\n",combined_soundtrack);
-	exec(({"sox","-m","-v","1","??.wav",tweaked_soundtrack,combined_soundtrack})); //Note that sox will (unusually) do its own globbing, so we don't have to
+	exec(({"sox","-S","-m","-v","1","??.wav",tweaked_soundtrack,combined_soundtrack})); //Note that sox will (unusually) do its own globbing, so we don't have to
 	rm(outputfile);
-	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-t","0:15:00","-c:v","copy",outputfile}));
+	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-ss","0:11:00","-t","0:05:00","-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks));
 }
