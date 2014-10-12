@@ -74,7 +74,17 @@ int main()
 	//1) Incorporate the original (tweaked) sound track, for reference. Just remove that parameter when done.
 	//2) Cut short the avconving after creating a short file - the -t and its next arg. Again, just remove it when done.
 	write("Rebuilding %s\n",combined_soundtrack);
-	exec(({"sox","-S","-m","-v",".5","??.wav",tweaked_soundtrack,combined_soundtrack})); //Note that sox will (unusually) do its own globbing, so we don't have to
+	//exec(({"sox","-S","-m","-v",".5","??.wav",tweaked_soundtrack,combined_soundtrack})); //Note that sox will (unusually) do its own globbing, so we don't have to
+	//Begin code cribbed from Process.run()
+	Stdio.File mystderr = Stdio.File();
+	object p=Process.create_process(({"sox","-S","-m","-v",".5","??.wav",tweaked_soundtrack,combined_soundtrack}),(["stderr":mystderr->pipe()]));
+	Pike.SmallBackend backend = Pike.SmallBackend();
+	mystderr->set_backend(backend);
+	mystderr->set_read_callback(lambda( mixed i, string data) {write(replace(data,"\n","\r"));}); //Write everything on one line, thus disposing of the unwanted spam :)
+	mystderr->set_close_callback(lambda () {mystderr = 0;});
+	while (mystderr) backend(1.0);
+	p->wait();
+	//End code from Process.run()
 	rm(outputfile);
 	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0","-ss","0:17:00","-t","0:02:00","-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
