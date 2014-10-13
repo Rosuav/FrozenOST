@@ -89,7 +89,7 @@ int main()
 		write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
 		exec(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}));
 	}
-	if (changed)
+	if (changed || !file_stat(combined_soundtrack))
 	{
 		//Note that the original (tweaked) sound track is incorporated, for reference.
 		//Remove that parameter when it's no longer needed - or keep it, as a feature.
