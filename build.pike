@@ -1,7 +1,8 @@
 #!/usr/local/bin/pike
 
 //Source file locations
-constant movie="Frozen 2013 720p HDRIP x264 AC3 TiTAN.mkv"; //or from /video/Disney/
+constant movie="Frozen 2013 720p HDRIP x264 AC3 TiTAN.mkv";
+constant moviepath="/video/Disney/";
 constant ost_mp3="../Downloads/Various.Artists-Frozen.OST-2013.320kbps-FF"; //Directory of MP3 files
 
 //Intermediate file names
@@ -77,6 +78,11 @@ int main()
 	{
 		if (!file_stat(orig_soundtrack))
 		{
+			if (!file_stat(movie))
+			{
+				write("Copying %s from %s\n",movie,moviepath);
+				Stdio.cp(moviepath+movie,movie);
+			}
 			write("Rebuilding %s (ripping from %s)\n",orig_soundtrack,movie);
 			exec(({"avconv","-i",movie,orig_soundtrack}));
 		}
