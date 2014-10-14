@@ -42,12 +42,14 @@ int main()
 	//see a large number of changed tracks, and simply recreate them all.
 	array(string) dir=get_dir(),ostmp3dir;
 	int changed;
+	array(string) tracklist=({ });
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
-		if (tracks[i]==prevtracks[i] && has_value(dir,outfn)) continue; //Unchanged and file exists.
+		if (tracks[i]==prevtracks[i] && has_value(dir,outfn)) {tracklist+=({outfn}); continue;} //Unchanged and file exists.
 		rm(outfn);
 		if (tracks[i]=="") {write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
+		tracklist+=({outfn});
 		array parts=tracks[i]/" ";
 		string prefix=parts[0],start=parts[1];
 		string partial_start,partial_len;
@@ -95,7 +97,8 @@ int main()
 		exec(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}));
 	}
 	if (changed) {rm(combined_soundtrack); rm(full_combined_soundtrack);}
-	string soundtrack = mode=="sync" ? full_combined_soundtrack : combined_soundtrack;
+	string soundtrack=combined_soundtrack;
+	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist+=({tweaked_soundtrack});}
 	if (!file_stat(soundtrack))
 	{
 		//Note that the original (tweaked) sound track is incorporated, for reference.
@@ -104,7 +107,7 @@ int main()
 		int t=time();
 		//Begin code cribbed from Process.run()
 		Stdio.File mystderr = Stdio.File();
-		object p=Process.create_process(({"sox","-S","-m","-v",".5","??.wav",mode=="sync"?tweaked_soundtrack:"--clobber",soundtrack}),(["stderr":mystderr->pipe()]));
+		object p=Process.create_process(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack}),(["stderr":mystderr->pipe()]));
 		Pike.SmallBackend backend = Pike.SmallBackend();
 		mystderr->set_backend(backend);
 		mystderr->set_read_callback(lambda( mixed i, string data) {write(replace(data,"\n","\r"));}); //Write everything on one line, thus disposing of the unwanted spam :)
