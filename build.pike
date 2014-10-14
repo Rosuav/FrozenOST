@@ -31,7 +31,7 @@ int main()
 	{
 		times=({"-ss",start,"-t",len||"0:01:00"});
 		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
-		ignorefrom-=300; //I could measure the length of each track, but it's simpler to just allow five minutes.
+		ignorefrom-=240; //I could measure the length of each track, but it's simpler to just allow four minutes, which is longer than any track I'm working with
 	}
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]})
