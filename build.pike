@@ -26,8 +26,13 @@ int main()
 	int start=time();
 	array(string) times=({ });
 	string mode;
+	int ignorefrom;
 	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:] %[0-9:] %[a-z]",string start,string len,mode) && start && start!="")
+	{
 		times=({"-ss",start,"-t",len||"0:01:00"});
+		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
+		ignorefrom-=300; //I could measure the length of each track, but it's simpler to just allow five minutes.
+	}
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]})
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
@@ -46,12 +51,14 @@ int main()
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
+		array parts=tracks[i]/" ";
+		string prefix=parts[0],start=parts[1];
+		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
+		if (startpos<ignorefrom) continue; //Can't have any effect on the resulting sound, so elide it
 		if (tracks[i]==prevtracks[i] && has_value(dir,outfn)) {tracklist+=({outfn}); continue;} //Unchanged and file exists.
 		rm(outfn);
 		if (tracks[i]=="") {write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		tracklist+=({outfn});
-		array parts=tracks[i]/" ";
-		string prefix=parts[0],start=parts[1];
 		string partial_start,partial_len;
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 		{
@@ -103,7 +110,7 @@ int main()
 	{
 		//Note that the original (tweaked) sound track is incorporated, for reference.
 		//Remove that parameter when it's no longer needed - or keep it, as a feature.
-		write("Rebuilding %s\n",soundtrack);
+		write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist));
 		int t=time();
 		//Begin code cribbed from Process.run()
 		Stdio.File mystderr = Stdio.File();
