@@ -23,6 +23,9 @@ void exec(array(string) cmd)
 int main()
 {
 	int start=time();
+	array(string) times=({ });
+	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:] %[0-9:]",string start,string len) && start && start!="")
+		times=({"-ss",start,"-t",len||"0:01:00"});
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]})
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
@@ -108,9 +111,6 @@ int main()
 		write("\n-- done in %.2fs\n",time(t));
 	}
 	rm(outputfile);
-	array(string) times=({ });
-	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:] %[0-9:]",string start,string len) && start && start!="")
-		times=({"-ss",start,"-t",len||"0:01:00"});
 	exec(({"avconv","-i",movie,"-i",combined_soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0"})+times+({"-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
