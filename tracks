@@ -72,3 +72,5 @@ freeform, with tag comments and other malformed lines being quite acceptable.
 129 1:20:00 [L86.5]
 ??? 1:21:30
 129 1:21:38 [S87.5]
+130 1:22:12.7 [L213]
+130 1:25:45.7 [S210] overlaps the above, so this just extends the tremolo
