@@ -125,7 +125,8 @@ int main()
 		write("\n-- done in %.2fs\n",time(t));
 	}
 	rm(outputfile);
-	exec(({"avconv","-i",movie,"-i",soundtrack,"-map","0:v","-map","1:a:0","-map","0:a:0"})+times+({"-c:v","copy",outputfile}));
+	if (mode!="sync" && mode!="mini") times=({"-map","0:a:0"})+times;
+	exec(({"avconv","-i",movie,"-i",soundtrack,"-map","0:v","-map","1:a:0"})+times+({"-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
 }
