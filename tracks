@@ -62,3 +62,4 @@ freeform, with tag comments and other malformed lines being quite acceptable.
 125 1:08:33
 126 1:09:35.3
 220 1:12:34
+127 1:13:31.45 which overlaps the end of the previous track by a few seconds
