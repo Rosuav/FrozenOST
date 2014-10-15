@@ -1,3 +1,9 @@
+The format of this file is simple. First field is a track number, all digits;
+next one the time at which it starts; and then may come a comma-separated set
+of tags, surrounded by square brackets. Everything after that is comments for
+the benefit of humans, and any line that can't be parsed (eg those that don't
+begin with digits) will also be considered a comment. This makes this largely
+freeform, with tag comments and other malformed lines being quite acceptable.
 111 0:00:05
 101 0:01:45.2
 112 0:03:42.85
