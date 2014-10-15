@@ -13,7 +13,7 @@ freeform, with tag comments and other malformed lines being quite acceptable.
 ;103 0:13:22.7 with words
 224 0:13:22.6 without words
 212 0:17:09.85
-;115 0:18:31.2 - about here somewhere, but really hard to place, and it needs to be split anyway
+115 0:18:33.2 [L34.5] - needs a lot of work
 211 0:19:14
 222 0:19:54 [S5.250,L10.500]
 ??? 0:20:05 - fanfare until 0:20:23
