@@ -26,11 +26,12 @@ int main()
 	int start=time();
 	array(string) times=({ });
 	string mode;
-	int ignorefrom;
+	int ignorefrom,ignoreto;
 	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:] %[0-9:] %[a-z]",string start,string len,mode) && start && start!="")
 	{
 		times=({"-ss",start,"-t",len||"0:01:00"});
 		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
+		foreach (len/":",string part) ignoreto=(ignoreto*60)+(int)part; ignoreto+=ignorefrom;
 		ignorefrom-=240; //I could measure the length of each track, but it's simpler to just allow four minutes, which is longer than any track I'm working with
 	}
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
@@ -54,7 +55,7 @@ int main()
 		array parts=tracks[i]/" ";
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
-		if (startpos<ignorefrom) continue; //Can't have any effect on the resulting sound, so elide it
+		if (startpos<ignorefrom || (ignoreto && ignoreto<startpos)) continue; //Can't have any effect on the resulting sound, so elide it
 		if (tracks[i]==prevtracks[i] && has_value(dir,outfn)) {tracklist+=({outfn}); continue;} //Unchanged and file exists.
 		rm(outfn);
 		if (tracks[i]=="") {write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
