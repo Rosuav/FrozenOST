@@ -2,16 +2,16 @@
 
 //Source file locations
 constant movie="Frozen 2013 720p HDRIP x264 AC3 TiTAN.mkv";
-constant moviepath="/video/Disney/";
+constant moviepath="/video/Disney/"; //moviepath+movie has to already exist; it'll be copied local for speed (and to allow *.mkv to be deleted safely). This directory can be mounted from a remote system.
 constant ost_mp3="../Downloads/Various.Artists-Frozen.OST-2013.320kbps-FF"; //Directory of MP3 files
 
 //Intermediate file names
-constant orig_soundtrack="MovieSoundTrack.wav";
-constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav";
-constant combined_soundtrack="soundtrack.wav";
-constant full_combined_soundtrack="soundtrack_full.wav";
+constant orig_soundtrack="MovieSoundTrack.wav"; //Direct rip from movie above
+constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav"; //orig_soundtrack converted down to 2 channels and 44KHz
+constant combined_soundtrack="soundtrack.wav"; //All the individual track files, but not tweaked_soundtrack
+constant full_combined_soundtrack="soundtrack_full.wav"; //All the individual track files *and* tweaked_soundtrack
 
-constant outputfile="Frozen plus OST.mkv";
+constant outputfile="Frozen plus OST.mkv"; //The video from movie, the audio from [full_]combined_soundtrack, and the audio from movie.
 
 void exec(array(string) cmd)
 {
