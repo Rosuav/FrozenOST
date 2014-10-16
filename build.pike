@@ -89,15 +89,15 @@ int main()
 		exec(({"sox",infn,outfn,"delay",start,start}));
 		changed=1;
 	}
+	if (!file_stat(movie))
+	{
+		write("Copying %s from %s\n",movie,moviepath);
+		Stdio.cp(moviepath+movie,movie);
+	}
 	if (!file_stat(tweaked_soundtrack))
 	{
 		if (!file_stat(orig_soundtrack))
 		{
-			if (!file_stat(movie))
-			{
-				write("Copying %s from %s\n",movie,moviepath);
-				Stdio.cp(moviepath+movie,movie);
-			}
 			write("Rebuilding %s (ripping from %s)\n",orig_soundtrack,movie);
 			exec(({"avconv","-i",movie,orig_soundtrack}));
 		}
