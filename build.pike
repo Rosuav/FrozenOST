@@ -117,7 +117,7 @@ int main()
 		//Remove that parameter when it's no longer needed - or keep it, as a feature.
 		write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist));
 		int t=time();
-		//Begin code cribbed from Process.run()
+		//Begin code cribbed from Process.run() - this could actually *use* Process.run() if stdout/stderr functions were supported
 		Stdio.File mystderr = Stdio.File();
 		object p=Process.create_process(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack}),(["stderr":mystderr->pipe()]));
 		Pike.SmallBackend backend = Pike.SmallBackend();
