@@ -4,16 +4,16 @@ of tags, surrounded by square brackets. Everything after that is comments for
 the benefit of humans, and any line that can't be parsed (eg those that don't
 begin with digits) will also be considered a comment. This makes this largely
 freeform, with tag comments and other malformed lines being quite acceptable.
-111 0:00:05
-101 0:01:45.2
+111 0:00:05 with words
+101 0:01:45.2 with words
 112 0:03:42.85
 113 0:06:34
-102 0:08:18.4
+102 0:08:18.4 with words
 114 0:11:38.55
 ;103 0:13:22.7 with words
 224 0:13:22.6 without words
 212 0:17:09.85
-115 0:18:33.2 [L34.5] - needs a lot of work
+115 0:18:33.2 [L34.5] with words - needs a lot of work
 211 0:19:14
 222 0:19:54 [S5.250,L10.500]
 ??? 0:20:05 - fanfare until 0:20:23
@@ -36,7 +36,7 @@ freeform, with tag comments and other malformed lines being quite acceptable.
 216 0:37:40.4 [S56,L20]
 216 0:38:03.9 [S77]
 --- 0:38:26 repeat of 216's theme again
-106 0:38:41.4
+106 0:38:41.4 with words
 --- 0:39:41 prepeat of 119?
 119 0:40:03 [L69]
 119 0:41:14.9 [S69.5]
@@ -51,14 +51,14 @@ freeform, with tag comments and other malformed lines being quite acceptable.
 217 0:51:05.2 [L9] needs a fade-out
 217 0:51:19.2 [S10] and a fade-in
 122 0:53:54.5
-108 0:55:42.95
+108 0:55:42.95 with words
 ??? 0:58:17
 123 0:58:24
 218 1:00:12
 124 1:02:04
 219 1:03:42 may need to be split?
 ??? 1:04:46
-109 1:05:37.9
+109 1:05:37.9 with words
 125 1:08:33
 126 1:09:35.3
 220 1:12:34
