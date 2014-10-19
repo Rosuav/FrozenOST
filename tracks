@@ -16,10 +16,10 @@ freeform, with tag comments and other malformed lines being quite acceptable.
 115 0:18:33.2 [L34.5] with words - needs a lot of work
 211 0:19:14
 222 0:19:54 [S5.250,L10.500]
-??? 0:20:05 - fanfare until 0:20:23
-??? 0:20:28 - background music until 0:21:35
+999 0:20:05 [L22] - fanfare
+999 0:20:28 [L67] - background music
 222 0:21:35.1 [S16.300,L25]
-??? 0:22:04 - background music until 0:22:40
+999 0:22:04 [L36] - background music
 116 0:22:44
 ;104 0:23:40 with words
 225 0:23:40 without words
