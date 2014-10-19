@@ -43,16 +43,16 @@ int main()
 	int tottracks=max(sizeof(tracks),sizeof(prevtracks));
 	if (sizeof(tracks)<tottracks) tracks+=({""})*(tottracks-sizeof(tracks));
 	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
-		if (!file_stat(tweaked_soundtrack))
+	if (!file_stat(tweaked_soundtrack))
+	{
+		if (!file_stat(orig_soundtrack))
 		{
-			if (!file_stat(orig_soundtrack))
-			{
-				write("Rebuilding %s (ripping from %s)\n",orig_soundtrack,movie);
-				exec(({"avconv","-i",movie,orig_soundtrack}));
-			}
-			write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
-			exec(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}));
+			write("Rebuilding %s (ripping from %s)\n",orig_soundtrack,movie);
+			exec(({"avconv","-i",movie,orig_soundtrack}));
 		}
+		write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
+		exec(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}));
+	}
 	//Figure out the changes between the two versions
 	//Note that this copes poorly with insertions/deletions/moves, and will
 	//see a large number of changed tracks, and simply recreate them all.
@@ -113,11 +113,7 @@ int main()
 	}
 	if (changed) {rm(combined_soundtrack); rm(full_combined_soundtrack);}
 	string soundtrack=combined_soundtrack;
-	if (mode=="sync")
-	{
-		soundtrack=full_combined_soundtrack;
-		tracklist+=({tweaked_soundtrack});
-	}
+	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist+=({tweaked_soundtrack});}
 	if (!file_stat(soundtrack))
 	{
 		//Note that the original (tweaked) sound track is incorporated, for reference.
