@@ -61,6 +61,7 @@ int main()
 		if (tracks[i]=="") {write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		tracklist+=({outfn});
 		string partial_start,partial_len;
+		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 		{
 			case 'S': partial_start=tag[1..]; prefix+=tag; break;
@@ -73,10 +74,16 @@ int main()
 		if (!sizeof(in))
 		{
 			if (!ostmp3dir) ostmp3dir=get_dir(ost_mp3); //Cache on first load - it shouldn't change
-			string fn=glob(parts[0]+"*.mp3",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
-			infn=prefix+fn[3..<3]+"wav";
+			string fn;
+			if (parts[0]=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
+			else
+			{
+				fn=glob(parts[0]+"*.mp3",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
+				infn=prefix+fn[3..<3]+"wav";
+				fn=ost_mp3+"/"+fn;
+			}
 			write("Creating %s from MP3\n",infn);
-			array(string) args=({"avconv","-i",ost_mp3+"/"+fn});
+			array(string) args=({"avconv","-i",fn});
 			if (partial_start) args+=({"-ss",partial_start});
 			if (partial_len) args+=({"-t",partial_len});
 			exec(args+({infn}));
