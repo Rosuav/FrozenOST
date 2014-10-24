@@ -39,7 +39,7 @@ int main()
 	{
 		times=({"-ss",start,"-t",len||"0:01:00"});
 		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
-		foreach (len/":",string part) ignoreto=(ignoreto*60)+(int)part; ignoreto+=ignorefrom;
+		foreach (times[-1]/":",string part) ignoreto=(ignoreto*60)+(int)part; ignoreto+=ignorefrom;
 		ignorefrom-=240; //I could measure the length of each track, but it's simpler to just allow four minutes, which is longer than any track I'm working with
 	}
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
