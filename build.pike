@@ -51,6 +51,11 @@ int main()
 	int tottracks=max(sizeof(tracks),sizeof(prevtracks));
 	if (sizeof(tracks)<tottracks) tracks+=({""})*(tottracks-sizeof(tracks));
 	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
+	if (!file_stat(movie))
+	{
+		write("Copying %s from %s\n",movie,moviepath);
+		Stdio.cp(moviepath+movie,movie);
+	}
 	if (!file_stat(tweaked_soundtrack))
 	{
 		if (!file_stat(orig_soundtrack))
@@ -122,11 +127,6 @@ int main()
 		changed=1;
 	}
 	write("Total gap: %.2f\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures are useful only if all intermediates were rebuilt.\n",gap,overlap,lastpos);
-	if (!file_stat(movie))
-	{
-		write("Copying %s from %s\n",movie,moviepath);
-		Stdio.cp(moviepath+movie,movie);
-	}
 	if (changed) {rm(combined_soundtrack); rm(full_combined_soundtrack);}
 	string soundtrack=combined_soundtrack;
 	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist+=({tweaked_soundtrack});}
