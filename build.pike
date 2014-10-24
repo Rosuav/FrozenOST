@@ -64,7 +64,8 @@ int main()
 			exec(({"avconv","-i",movie,orig_soundtrack}));
 		}
 		write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
-		exec(({"sox","-S",orig_soundtrack,"-c","2","-r","44100",tweaked_soundtrack}));
+		//Downmix from 5.1 to stereo: http://forum.doom9.org/archive/index.php/t-152034.html
+		exec(({"sox","-S",orig_soundtrack,"-r","44100",tweaked_soundtrack,"remix","-m","1v0.3254,3v0.2301,5v0.2818,6v0.1627","2v0.3254,3v0.2301,5v-0.1627,6v-0.2818"}));
 	}
 	//Figure out the changes between the two versions
 	//Note that this copes poorly with insertions/deletions/moves, and will
