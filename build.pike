@@ -13,12 +13,20 @@ constant full_combined_soundtrack="soundtrack_full.wav"; //All the individual tr
 
 constant outputfile="Frozen plus OST.mkv"; //The video from movie, the audio from [full_]combined_soundtrack, and the audio from movie.
 
+//Emit output iff in verbose mode
+//Note that it'll still evaluate its args even in non-verbose mode, for consistency.
+#ifdef VERBOSE
+constant verbose=write;
+#else
+void verbose(mixed ... args) { };
+#endif
+
 void exec(array(string) cmd)
 {
 	int t=time();
 	Process.create_process(cmd)->wait();
 	float tm=time(t);
-	if (tm>5.0) write("-- done in %.2fs\n",tm);
+	if (tm>5.0) verbose("-- done in %.2fs\n",tm);
 }
 
 int main()
@@ -59,6 +67,8 @@ int main()
 	array(string) dir=get_dir(),ostmp3dir;
 	int changed;
 	array(string) tracklist=({ });
+	float lastpos=0.0;
+	float overlap=0.0,gap=0.0;
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
@@ -66,6 +76,9 @@ int main()
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
 		if (startpos<ignorefrom || (ignoreto && ignoreto<startpos)) continue; //Can't have any effect on the resulting sound, so elide it
+		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
+		if (pos>lastpos) {verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);} //Note that these figures are going to be wrong unless
+		else {verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);} //the ??.wav intermediates are all being rebuilt.
 		if (tracks[i]==prevtracks[i] && has_value(dir,outfn)) {tracklist+=({outfn}); continue;} //Unchanged and file exists.
 		rm(outfn);
 		if (tracks[i]=="") {write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
@@ -104,8 +117,11 @@ int main()
 		write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
 		//eg: sox 111* 01.wav delay 0:00:05 0:00:05
 		exec(({"sox",infn,outfn,"delay",start,start}));
+		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
+		lastpos=hr*3600+min*60+sec;
 		changed=1;
 	}
+	write("Total gap: %.2f\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures are useful only if all intermediates were rebuilt.\n",gap,overlap,lastpos);
 	if (!file_stat(movie))
 	{
 		write("Copying %s from %s\n",movie,moviepath);
