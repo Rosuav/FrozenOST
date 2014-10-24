@@ -50,6 +50,13 @@ int main()
 		//Special: Instead of actually building anything, just run through the tracks
 		//and figure out which parts of the original files haven't been used. Contains
 		//code copied from the below; full deduplication is probably not easy.
+		//As of 20141025, the unused sections of Frozen are:
+		//115: 34.500->end
+		//131: 0.000-26.000
+		//222: 0.000-5.250
+		//There are a number of completely unused files, including outtakes, the words
+		//versions of tracks available instrumentally, and the credits song (which for
+		//some reason doesn't seem to fit, so there's a comments-only line in tracks).
 		array ostmp3dir=glob("*.mp3",get_dir(ost_mp3));
 		mapping(string:array) partialusage=([]);
 		foreach (tracks,string t)
