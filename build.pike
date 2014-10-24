@@ -43,8 +43,46 @@ int main()
 		ignorefrom-=240; //I could measure the length of each track, but it's simpler to just allow four minutes, which is longer than any track I'm working with
 	}
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
-	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]})
+	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
+	if (mode=="trackusage")
+	{
+		//Special: Instead of actually building anything, just run through the tracks
+		//and figure out which parts of the original files haven't been used. Contains
+		//code copied from the below; full deduplication is probably not easy.
+		array ostmp3dir=glob("*.mp3",get_dir(ost_mp3));
+		mapping(string:array) partialusage=([]);
+		foreach (tracks,string t)
+		{
+			array parts=t/" ";
+			if (parts[0]=="999") continue; //Ignore shine-through segments
+			ostmp3dir-=glob(parts[0]+"*.mp3",ostmp3dir);
+			string partial_start,partial_len;
+			if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0])
+			{
+				case 'S': partial_start=tag[1..]; break;
+				case 'L': partial_len=tag[1..]; break;
+				default: break;
+			}
+			if (!partial_start && !partial_len) continue; //Easy
+			if (!partialusage[parts[0]]) partialusage[parts[0]]=({ });
+			partialusage[parts[0]]+=({({(float)partial_start, partial_len && (float)partial_len})}); //Note that len will be the integer 0 if there's no length.
+		}
+		write("Unused files:\n%{%3.3s: all\n%}",sort(ostmp3dir));
+		foreach (sort(indices(partialusage)),string track)
+		{
+			float doneto=0.0;
+			array(string) errors=({ });
+			foreach (sort(partialusage[track]),[float start,float len])
+			{
+				if (start-doneto>1.0) errors+=({sprintf("%f-%f",doneto||0.0,start)}); //Ignore gaps of up to a second, which are usually just skipping over the silence between sections
+				if (len) doneto=start+len; else doneto=-1.0; //There shouldn't be anything following a length-less entry
+			}
+			if (doneto!=-1.0) errors+=({sprintf("%f->end",doneto)});
+			if (sizeof(errors)) write("%s: %s\n",track,errors*", ");
+		}
+		return 0;
+	}
 	array prevtracks;
 	catch {prevtracks=decode_value(Stdio.read_file("prevtracks"));};
 	if (!prevtracks) prevtracks=({ });
