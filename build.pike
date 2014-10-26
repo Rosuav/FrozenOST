@@ -142,50 +142,52 @@ int main()
 		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
 		if (pos>lastpos) {verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);} //Note that these figures are going to be wrong unless
 		else {verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);} //the ??.wav intermediates are all being rebuilt.
-		if (tracks[i]==prevtracks[i] && has_value(dir,outfn)) {tracklist+=({outfn}); continue;} //Unchanged and file exists.
-		rm(outfn);
-		if (tracks[i]=="") {write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
-		tracklist+=({outfn});
-		string partial_start,partial_len,temposhift;
-		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
-		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
+		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
+		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
 		{
-			case 'S': partial_start=tag[1..]; prefix+=tag; break;
-			case 'L': partial_len=tag[1..]; prefix+=tag; break;
-			case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
-			default: break;
-		}
-
-		//Find and maybe create the .wav version of the input file we want
-		array(string) in=glob(prefix+" *.wav",dir); string infn;
-		if (!sizeof(in))
-		{
-			if (!ostmp3dir) ostmp3dir=get_dir(ost_mp3); //Cache on first load - it shouldn't change
-			string fn;
-			if (parts[0]=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
-			else
+			rm(outfn);
+			string partial_start,partial_len,temposhift;
+			if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
+			if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 			{
-				fn=glob(parts[0]+"*.mp3",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
-				infn=prefix+fn[3..<3]+"wav";
-				fn=ost_mp3+"/"+fn;
+				case 'S': partial_start=tag[1..]; prefix+=tag; break;
+				case 'L': partial_len=tag[1..]; prefix+=tag; break;
+				case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
+				default: break;
 			}
-			write("Creating %s from MP3\n",infn);
-			array(string) args=({"avconv","-i",fn});
-			if (partial_start) args+=({"-ss",partial_start});
-			if (partial_len) args+=({"-t",partial_len});
-			exec(args+({infn}));
-			dir=get_dir(); if (!has_value(dir,infn)) exit(1,"Was not able to create %s - exiting\n",infn);
-		}
-		else infn=in[0];
 
-		write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
-		//eg: sox 111* 01.wav delay 0:00:05 0:00:05
-		array(string) args=({"sox",infn,outfn});
-		if (temposhift) args+=({"tempo","-m",temposhift});
-		exec(args+({"delay",start,start}));
+			//Find and maybe create the .wav version of the input file we want
+			array(string) in=glob(prefix+" *.wav",dir); string infn;
+			if (!sizeof(in))
+			{
+				if (!ostmp3dir) ostmp3dir=get_dir(ost_mp3); //Cache on first load - it shouldn't change
+				string fn;
+				if (parts[0]=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
+				else
+				{
+					fn=glob(parts[0]+"*.mp3",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
+					infn=prefix+fn[3..<3]+"wav";
+					fn=ost_mp3+"/"+fn;
+				}
+				write("Creating %s from MP3\n",infn);
+				array(string) args=({"avconv","-i",fn});
+				if (partial_start) args+=({"-ss",partial_start});
+				if (partial_len) args+=({"-t",partial_len});
+				exec(args+({infn}));
+				dir=get_dir(); if (!has_value(dir,infn)) exit(1,"Was not able to create %s - exiting\n",infn);
+			}
+			else infn=in[0];
+
+			write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
+			//eg: sox 111* 01.wav delay 0:00:05 0:00:05
+			array(string) args=({"sox",infn,outfn});
+			if (temposhift) args+=({"tempo","-m",temposhift});
+			exec(args+({"delay",start,start}));
+			changed=1;
+		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
 		lastpos=hr*3600+min*60+sec;
-		changed=1;
+		tracklist+=({outfn});
 	}
 	write("Total gap: %.2f\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures are useful only if all intermediates were rebuilt.\n",gap,overlap,lastpos);
 	if (changed) {rm(combined_soundtrack); rm(full_combined_soundtrack);}
