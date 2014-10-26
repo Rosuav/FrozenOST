@@ -140,8 +140,9 @@ int main()
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
 		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
 		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
-		if (pos>lastpos) {verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);} //Note that these figures are going to be wrong unless
-		else {verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);} //the ??.wav intermediates are all being rebuilt.
+		if (pos>lastpos) verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);
+		else if (pos==lastpos) verbose("%s: abut\n",outfn);
+		else verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
 		{
