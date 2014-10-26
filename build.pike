@@ -136,6 +136,7 @@ int main()
 	{
 		string outfn=sprintf("%02d.wav",i);
 		array parts=tracks[i]/" ";
+		if (parts[1]=="::") parts[1]=(string)lastpos; //Explicit abuttal
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
 		if (ignoreto && ignoreto<startpos) {tracks[i]=prevtracks[i]; continue;} //Can't have any effect on the resulting sound, so elide it - but don't save the change that wasn't done
@@ -152,7 +153,7 @@ int main()
 			if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 			{
 				case 'S': partial_start=tag[1..]; prefix+=tag; break;
-				case 'L': partial_len=tag[1..]; prefix+=tag; break;
+				case 'L': partial_len=tag[1..]; prefix+=tag; break; //TODO: "L::" to mean "length up to where the next track starts"
 				case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
 				default: break;
 			}
