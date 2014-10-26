@@ -136,7 +136,7 @@ int main()
 	{
 		string outfn=sprintf("%02d.wav",i);
 		array parts=tracks[i]/" "; if (sizeof(parts)==1) parts+=({""});
-		if (parts[1]=="::") parts[1]=(string)lastpos; //Explicit abuttal
+		if (parts[1]=="::") {verbose("%s: placing at %s\n",outfn,parts[1]=(string)lastpos); tracks[i]=parts*" ";} //Explicit abuttal - patch in the actual time, for the use of prevtracks
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
 		if (ignoreto && ignoreto<startpos) {tracks[i]=prevtracks[i]; continue;} //Can't have any effect on the resulting sound, so elide it - but don't save the change that wasn't done
