@@ -138,7 +138,7 @@ int main()
 		array parts=tracks[i]/" ";
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
-		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
+		if (ignoreto && ignoreto<startpos) {tracks[i]=prevtracks[i]; continue;} //Can't have any effect on the resulting sound, so elide it - but don't save the change that wasn't done
 		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
 		if (pos>lastpos) verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);
 		else if (pos==lastpos) verbose("%s: abut\n",outfn);
