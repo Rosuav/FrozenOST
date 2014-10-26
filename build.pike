@@ -47,7 +47,7 @@ int main()
 	array(string) times=({ });
 	string mode;
 	int ignorefrom,ignoreto;
-	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:] %[0-9:] %[a-z]",string start,string len,mode) && start && start!="")
+	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:.] %[0-9:] %[a-z]",string start,string len,mode) && start && start!="")
 	{
 		times=({"-ss",start,"-t",len||"0:01:00"});
 		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
