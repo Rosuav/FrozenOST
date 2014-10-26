@@ -29,6 +29,18 @@ void exec(array(string) cmd)
 	if (tm>5.0) verbose("-- done in %.2fs\n",tm);
 }
 
+/* TODO: Add shine-through control.
+
+Currently, there are a few sections of shine-through, given as track 999. Would be nice to have two
+additional modes:
+
+1) Disable all shine-through. All 999 sections will be removed from the final tracklist.
+2) Use explicit shine-through only. (Current behaviour.)
+3) Auto-shine-through. Anywhere there's a gap (as shown by the Gap display), insert shine-through.
+
+It might also be nice to have separate volume control - eg "shine-through at 10% volume".
+*/
+
 int main()
 {
 	int start=time();
