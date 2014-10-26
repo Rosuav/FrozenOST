@@ -189,7 +189,7 @@ int main()
 		lastpos=hr*3600+min*60+sec;
 		if (startpos>ignorefrom) tracklist+=({outfn});
 	}
-	write("Total gap: %.2f\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures are useful only if all intermediates were rebuilt.\n",gap,overlap,lastpos);
+	write("Total gap: %.2f\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures may apply to only the beginning of the movie.\n",gap,overlap,lastpos);
 	if (changed) {rm(combined_soundtrack); rm(full_combined_soundtrack);}
 	string soundtrack=combined_soundtrack;
 	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist+=({tweaked_soundtrack});}
