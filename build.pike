@@ -131,7 +131,7 @@ int main()
 	int changed;
 	array(string) tracklist=({ });
 	float lastpos=0.0;
-	float overlap=0.0,gap=0.0;
+	float overlap=0.0,gap=0.0; int abuttals;
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
@@ -141,7 +141,7 @@ int main()
 		if (ignoreto && ignoreto<startpos) {tracks[i]=prevtracks[i]; continue;} //Can't have any effect on the resulting sound, so elide it - but don't save the change that wasn't done
 		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
 		if (pos>lastpos) verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);
-		else if (pos==lastpos) verbose("%s: abut\n",outfn);
+		else if (pos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
 		else verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
@@ -190,7 +190,7 @@ int main()
 		lastpos=hr*3600+min*60+sec;
 		if (startpos>ignorefrom) tracklist+=({outfn});
 	}
-	write("Total gap: %.2f\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures may apply to only the beginning of the movie.\n",gap,overlap,lastpos);
+	write("Total gap: %.2f\nTotal abutting tracks: %d\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures may apply to only the beginning of the movie.\n",gap,abuttals,overlap,lastpos);
 	if (changed) {rm(combined_soundtrack); rm(full_combined_soundtrack);}
 	string soundtrack=combined_soundtrack;
 	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist+=({tweaked_soundtrack});}
