@@ -196,7 +196,8 @@ int main()
 		int t=time();
 		//Begin code cribbed from Process.run() - this could actually *use* Process.run() if stdout/stderr functions were supported
 		Stdio.File mystderr = Stdio.File();
-		object p=Process.create_process(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack}),(["stderr":mystderr->pipe()]));
+		array trim=ignoreto?({"trim","0",(string)ignoreto}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
+		object p=Process.create_process(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack})+trim,(["stderr":mystderr->pipe()]));
 		Pike.SmallBackend backend = Pike.SmallBackend();
 		mystderr->set_backend(backend);
 		mystderr->set_read_callback(lambda( mixed i, string data) {write(replace(data,"\n","\r"));}); //Write everything on one line, thus disposing of the unwanted spam :)
