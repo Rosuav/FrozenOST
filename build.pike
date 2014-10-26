@@ -135,7 +135,7 @@ int main()
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
-		array parts=tracks[i]/" ";
+		array parts=tracks[i]/" "; if (sizeof(parts)==1) parts+=({""});
 		if (parts[1]=="::") parts[1]=(string)lastpos; //Explicit abuttal
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
