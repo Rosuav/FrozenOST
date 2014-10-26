@@ -146,12 +146,13 @@ int main()
 		rm(outfn);
 		if (tracks[i]=="") {write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		tracklist+=({outfn});
-		string partial_start,partial_len;
+		string partial_start,partial_len,temposhift;
 		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 		{
 			case 'S': partial_start=tag[1..]; prefix+=tag; break;
 			case 'L': partial_len=tag[1..]; prefix+=tag; break;
+			case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
 			default: break;
 		}
 
@@ -179,7 +180,9 @@ int main()
 
 		write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
 		//eg: sox 111* 01.wav delay 0:00:05 0:00:05
-		exec(({"sox",infn,outfn,"delay",start,start}));
+		array(string) args=({"sox",infn,outfn});
+		if (temposhift) args+=({"tempo","-m",temposhift});
+		exec(args+({"delay",start,start}));
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
 		lastpos=hr*3600+min*60+sec;
 		changed=1;
