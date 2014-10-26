@@ -138,7 +138,7 @@ int main()
 		array parts=tracks[i]/" ";
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
-		if (startpos<ignorefrom || (ignoreto && ignoreto<startpos)) continue; //Can't have any effect on the resulting sound, so elide it
+		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
 		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
 		if (pos>lastpos) {verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);} //Note that these figures are going to be wrong unless
 		else {verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);} //the ??.wav intermediates are all being rebuilt.
@@ -187,7 +187,7 @@ int main()
 		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
 		lastpos=hr*3600+min*60+sec;
-		tracklist+=({outfn});
+		if (startpos>ignorefrom) tracklist+=({outfn});
 	}
 	write("Total gap: %.2f\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures are useful only if all intermediates were rebuilt.\n",gap,overlap,lastpos);
 	if (changed) {rm(combined_soundtrack); rm(full_combined_soundtrack);}
