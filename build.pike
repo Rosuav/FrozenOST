@@ -10,6 +10,7 @@ constant orig_soundtrack="MovieSoundTrack.wav"; //Direct rip from movie above
 constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav"; //orig_soundtrack converted down to 2 channels and 44KHz
 constant combined_soundtrack="soundtrack.wav"; //All the individual track files, but not tweaked_soundtrack
 constant full_combined_soundtrack="soundtrack_full.wav"; //All the individual track files *and* tweaked_soundtrack
+constant words_prefix="words_",instr_prefix="instr_"; //The actual sound track file names are prefixed with one of these.
 
 constant outputfile="Frozen plus OST.mkv"; //The video from movie, the audio from [full_]combined_soundtrack, and the audio from movie.
 
@@ -129,7 +130,7 @@ int main()
 	//see a large number of changed tracks, and simply recreate them all.
 	array(string) dir=get_dir(),ostmp3dir;
 	int changed;
-	array(string) tracklist=({ });
+	array(string) tracklist_instr=({ }),tracklist_words=({ });
 	float lastpos=0.0;
 	float overlap=0.0,gap=0.0; int abuttals;
 	for (int i=0;i<tottracks;++i)
@@ -147,11 +148,14 @@ int main()
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		string partial_start,partial_len,temposhift;
 		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
+		int include_instr=1,include_words=1;
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 		{
 			case 'S': partial_start=tag[1..]; prefix+=tag; break;
 			case 'L': partial_len=tag[1..]; prefix+=tag; break; //TODO: "L::" to mean "length up to where the next track starts"
 			case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
+			case 'I': include_words=0; break; //Instrumental track: skip on the "has words" soundtrack
+			case 'W': include_instr=0; break; //Words track: skip on the "all instrumental" soundtrack
 			default: break;
 		}
 		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
@@ -189,34 +193,41 @@ int main()
 		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
 		lastpos=hr*3600+min*60+sec;
-		if (startpos>ignorefrom) tracklist+=({outfn});
+		if (startpos<=ignorefrom) continue;
+		if (include_words) tracklist_words+=({outfn});
+		if (include_instr) tracklist_instr+=({outfn});
 	}
 	write("Total gap: %.2f\nTotal abutting tracks: %d\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures may apply to only the beginning of the movie.\n",gap,abuttals,overlap,lastpos);
-	if (changed) {rm(combined_soundtrack); rm(full_combined_soundtrack);}
+	if (changed) {rm(words_prefix+combined_soundtrack); rm(words_prefix+full_combined_soundtrack); rm(words_prefix+full_combined_soundtrack); rm(instr_prefix+full_combined_soundtrack);}
 	string soundtrack=combined_soundtrack;
-	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist+=({tweaked_soundtrack});}
-	if (!file_stat(soundtrack))
+	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist_words+=({tweaked_soundtrack}); tracklist_instr+=({tweaked_soundtrack});}
+	for (int words=0;words<=1;++words)
 	{
-		//Note that the original (tweaked) sound track is incorporated, for reference.
-		//Remove that parameter when it's no longer needed - or keep it, as a feature.
-		write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist));
-		int t=time();
-		//Begin code cribbed from Process.run() - this could actually *use* Process.run() if stdout/stderr functions were supported
-		Stdio.File mystderr = Stdio.File();
-		array trim=ignoreto?({"trim","0",(string)ignoreto}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
-		object p=Process.create_process(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack})+trim,(["stderr":mystderr->pipe()]));
-		Pike.SmallBackend backend = Pike.SmallBackend();
-		mystderr->set_backend(backend);
-		mystderr->set_read_callback(lambda( mixed i, string data) {write(replace(data,"\n","\r"));}); //Write everything on one line, thus disposing of the unwanted spam :)
-		mystderr->set_close_callback(lambda () {mystderr = 0;});
-		while (mystderr) backend(1.0);
-		p->wait();
-		//End code from Process.run()
-		write("\n-- done in %.2fs\n",time(t));
+		array tracklist=words?tracklist_words:tracklist_instr;
+		string soundtrack=({instr_prefix,words_prefix})[words]+soundtrack;
+		if (!file_stat(soundtrack))
+		{
+			//Note that the original (tweaked) sound track is incorporated, for reference.
+			//Remove that parameter when it's no longer needed - or keep it, as a feature.
+			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist));
+			int t=time();
+			//Begin code cribbed from Process.run() - this could actually *use* Process.run() if stdout/stderr functions were supported
+			Stdio.File mystderr = Stdio.File();
+			array trim=ignoreto?({"trim","0",(string)ignoreto}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
+			object p=Process.create_process(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack})+trim,(["stderr":mystderr->pipe()]));
+			Pike.SmallBackend backend = Pike.SmallBackend();
+			mystderr->set_backend(backend);
+			mystderr->set_read_callback(lambda( mixed i, string data) {write(replace(data,"\n","\r"));}); //Write everything on one line, thus disposing of the unwanted spam :)
+			mystderr->set_close_callback(lambda () {mystderr = 0;});
+			while (mystderr) backend(1.0);
+			p->wait();
+			//End code from Process.run()
+			write("\n-- done in %.2fs\n",time(t));
+		}
 	}
 	rm(outputfile);
 	if (mode!="sync" && mode!="mini") times=({"-map","0:a:0"})+times;
-	exec(({"avconv","-i",movie,"-i",soundtrack,"-map","0:v","-map","1:a:0"})+times+({"-c:v","copy",outputfile}));
+	exec(({"avconv","-i",movie,"-i",instr_prefix+soundtrack,"-i",words_prefix+soundtrack,"-map","0:v","-map","1:a:0","-map","2:a:0"})+times+({"-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
 }
