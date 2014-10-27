@@ -145,18 +145,18 @@ int main()
 		else if (pos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
 		else verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
+		string partial_start,partial_len,temposhift;
+		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
+		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
+		{
+			case 'S': partial_start=tag[1..]; prefix+=tag; break;
+			case 'L': partial_len=tag[1..]; prefix+=tag; break; //TODO: "L::" to mean "length up to where the next track starts"
+			case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
+			default: break;
+		}
 		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
 		{
 			rm(outfn);
-			string partial_start,partial_len,temposhift;
-			if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
-			if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
-			{
-				case 'S': partial_start=tag[1..]; prefix+=tag; break;
-				case 'L': partial_len=tag[1..]; prefix+=tag; break; //TODO: "L::" to mean "length up to where the next track starts"
-				case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
-				default: break;
-			}
 
 			//Find and maybe create the .wav version of the input file we want
 			array(string) in=glob(prefix+" *.wav",dir); string infn;
