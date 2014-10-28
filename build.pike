@@ -152,7 +152,20 @@ int main()
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 		{
 			case 'S': partial_start=tag[1..]; prefix+=tag; break;
-			case 'L': partial_len=tag[1..]; prefix+=tag; break; //TODO: "L::" to mean "length up to where the next track starts"
+			case 'L':
+				if (tag=="L::")
+				{
+					//"Length up to where the next one starts"
+					//Ignores any tempo shift - don't use both together.
+					//Obviously incompatible with the next track starting at ::
+					//Code duplicated from the above
+					string next=(tracks[i+1]/" ")[1];
+					int nextpos; foreach (next/":",string part) nextpos=(nextpos*60)+(int)part;
+					float npos=(float)nextpos; if (has_value(next,'.')) npos+=(float)("."+(next/".")[-1]);
+					tag="L"+(npos-pos);
+				}
+				partial_len=tag[1..]; prefix+=tag;
+				break;
 			case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
 			case 'I': include_words=0; break; //Instrumental track: skip on the "has words" soundtrack
 			case 'W': include_instr=0; break; //Words track: skip on the "all instrumental" soundtrack
