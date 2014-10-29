@@ -211,7 +211,7 @@ int main()
 		if (include_instr) tracklist_instr+=({outfn});
 	}
 	write("Total gap: %.2f\nTotal abutting tracks: %d\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures may apply to only the beginning of the movie.\n",gap,abuttals,overlap,lastpos);
-	if (changed) {rm(words_prefix+combined_soundtrack); rm(words_prefix+full_combined_soundtrack); rm(words_prefix+full_combined_soundtrack); rm(instr_prefix+full_combined_soundtrack);}
+	if (changed) {rm(words_prefix+combined_soundtrack); rm(words_prefix+full_combined_soundtrack); rm(instr_prefix+combined_soundtrack); rm(instr_prefix+full_combined_soundtrack);}
 	string soundtrack=combined_soundtrack;
 	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist_words+=({tweaked_soundtrack}); tracklist_instr+=({tweaked_soundtrack});}
 	for (int words=0;words<=1;++words)
