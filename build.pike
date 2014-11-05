@@ -205,7 +205,7 @@ int main()
 			changed=1;
 		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
-		lastpos=hr*3600+min*60+sec;
+		if (include_words) lastpos=hr*3600+min*60+sec; //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks.
 		if (startpos<=ignorefrom) continue;
 		if (include_words) tracklist_words+=({outfn});
 		if (include_instr) tracklist_instr+=({outfn});
