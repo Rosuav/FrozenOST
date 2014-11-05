@@ -220,21 +220,12 @@ int main()
 		string soundtrack=({instr_prefix,words_prefix})[words]+soundtrack;
 		if (!file_stat(soundtrack))
 		{
-			//Note that the original (tweaked) sound track is incorporated, for reference.
-			//Remove that parameter when it's no longer needed - or keep it, as a feature.
 			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist));
 			int t=time();
-			//Begin code cribbed from Process.run() - this could actually *use* Process.run() if stdout/stderr functions were supported
-			Stdio.File mystderr = Stdio.File();
 			array trim=ignoreto?({"trim","0",(string)ignoreto}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
-			object p=Process.create_process(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack})+trim,(["stderr":mystderr->pipe()]));
-			Pike.SmallBackend backend = Pike.SmallBackend();
-			mystderr->set_backend(backend);
-			mystderr->set_read_callback(lambda( mixed i, string data) {write(replace(data,"\n","\r"));}); //Write everything on one line, thus disposing of the unwanted spam :)
-			mystderr->set_close_callback(lambda () {mystderr = 0;});
-			while (mystderr) backend(1.0);
-			p->wait();
-			//End code from Process.run()
+			Process.run(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack})+trim,
+				(["stderr":lambda(string data) {write(replace(data,"\n","\r"));}]) //Write everything on one line, thus disposing of the unwanted spam :)
+			);
 			write("\n-- done in %.2fs\n",time(t));
 		}
 	}
