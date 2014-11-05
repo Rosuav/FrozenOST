@@ -8,9 +8,7 @@ constant ost_mp3="../Downloads/Various.Artists-Frozen.OST-2013.320kbps-FF"; //Di
 //Intermediate file names
 constant orig_soundtrack="MovieSoundTrack.wav"; //Direct rip from movie above
 constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav"; //orig_soundtrack converted down to 2 channels and 44KHz
-constant combined_soundtrack="soundtrack.wav"; //All the individual track files, but not tweaked_soundtrack
-constant full_combined_soundtrack="soundtrack_full.wav"; //All the individual track files *and* tweaked_soundtrack
-constant words_prefix="words_",instr_prefix="instr_"; //The actual sound track file names are prefixed with one of these.
+constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
 
 constant outputfile="Frozen plus OST.mkv"; //The video from movie, the audio from [full_]combined_soundtrack, and the audio from movie.
 
@@ -42,13 +40,32 @@ additional modes:
 It might also be nice to have separate volume control - eg "shine-through at 10% volume".
 */
 
+/* Build modes are, by default, selected by a keyword.
+
+Each build mode specifies a number of sound tracks, which will be incorporated into the resulting
+movie in order. (The first one listed will be the default playback track.) If the sound track is
+"c", it will be an exact copy of the original (mapped in directly). Otherwise, it consists of any
+number of the following letters, specifying inclusions:
+
+i: Instrumental tracks (those tagged [Instrumental] in the track list)
+w: Words tracks (those tagged [Words]; tracks with neither tag count as both)
+9: Shine-through tracks (note that they can still be excluded by a Words/Instrumental tag)
+s: Synchronization track (the original sound track mixed in at reduced volume)
+*/
+constant modes=([
+	"": ({"i9", "w9", "c"}), //Default build
+	"mini": ({"i9", "w9"}),
+	"sync": ({"i9s", "w9s"}),
+	"full": ({"i9", "w9", "i", "w", "is", "ws", "i9s", "w9s", "", "s", "c"}), //Every plausible combination. Add to this as ideas come.
+]);
+
 int main()
 {
 	int start=time();
 	array(string) times=({ });
-	string mode;
+	string mode="";
 	int ignorefrom,ignoreto;
-	if (sscanf(Stdio.read_file("partialbuild")||"","%[0-9:.] %[0-9:] %[a-z]",string start,string len,mode) && start && start!="")
+	if (sscanf(Stdio.read_file("partialbuild")||"","%[a-z] %[0-9:.] %[0-9:]",mode,string start,string len) && start && start!="")
 	{
 		times=({"-ss",start,"-t",len||"0:01:00"});
 		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
@@ -103,6 +120,8 @@ int main()
 		}
 		return 0;
 	}
+	array(string) trackdefs=modes[mode];
+	if (!trackdefs) exit(0,"Unrecognized mode %O\n",mode);
 	array prevtracks;
 	catch {prevtracks=decode_value(Stdio.read_file("prevtracks"));};
 	if (!prevtracks) prevtracks=({ });
@@ -130,7 +149,7 @@ int main()
 	//see a large number of changed tracks, and simply recreate them all.
 	array(string) dir=get_dir(),ostmp3dir;
 	int changed;
-	array(string) tracklist_instr=({ }),tracklist_words=({ });
+	array(array(string)) tracklist=allocate(sizeof(trackdefs),({ }));
 	float lastpos=0.0;
 	float overlap=0.0,gap=0.0; int abuttals;
 	for (int i=0;i<tottracks;++i)
@@ -207,31 +226,37 @@ int main()
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
 		if (include_words) lastpos=hr*3600+min*60+sec; //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks.
 		if (startpos<=ignorefrom) continue;
-		if (include_words) tracklist_words+=({outfn});
-		if (include_instr) tracklist_instr+=({outfn});
+		foreach (trackdefs;int i;string t)
+		{
+			if (has_value(t,'w') && !include_words) continue;
+			if (has_value(t,'i') && !include_instr) continue;
+			if (!has_value(t,'9') && parts[0]=="999") continue;
+			tracklist[i]+=({outfn});
+		}
 	}
 	write("Total gap: %.2f\nTotal abutting tracks: %d\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures may apply to only the beginning of the movie.\n",gap,abuttals,overlap,lastpos);
-	if (changed) {rm(words_prefix+combined_soundtrack); rm(words_prefix+full_combined_soundtrack); rm(instr_prefix+combined_soundtrack); rm(instr_prefix+full_combined_soundtrack);}
-	string soundtrack=combined_soundtrack;
-	if (mode=="sync") {soundtrack=full_combined_soundtrack; tracklist_words+=({tweaked_soundtrack}); tracklist_instr+=({tweaked_soundtrack});}
-	for (int words=0;words<=1;++words)
+	if (changed) rm(glob(sprintf(combined_soundtrack,"*"),get_dir())[*]);
+	array(string) inputs=({"-i",movie}),map=({"-map","0:v"});
+	foreach (trackdefs;int i;string t)
 	{
-		array tracklist=words?tracklist_words:tracklist_instr;
-		string soundtrack=({instr_prefix,words_prefix})[words]+soundtrack;
+		if (t=="c") {map+=({"-map","0:a:0"}); continue;} //Easy. No input, just another thing to map in.
+		if (has_value(t,'s')) tracklist[i]+=({tweaked_soundtrack});
+		string soundtrack=sprintf(combined_soundtrack,t);
 		if (!file_stat(soundtrack))
 		{
-			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist));
+			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist[i]));
 			int t=time();
 			array trim=ignoreto?({"trim","0",(string)ignoreto}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
-			Process.run(({"sox","-S","-m","-v",".5"})+tracklist/1*({"-v",".5"})+({soundtrack})+trim,
+			Process.run(({"sox","-S","-m","-v",".5"})+tracklist[i]/1*({"-v",".5"})+({soundtrack})+trim,
 				(["stderr":lambda(string data) {write(replace(data,"\n","\r"));}]) //Write everything on one line, thus disposing of the unwanted spam :)
 			);
 			write("\n-- done in %.2fs\n",time(t));
 		}
+		map+=({"-map",sprintf("%d:a:0",sizeof(inputs)/2)}); //Count the inputs prior to adding this one in - map identifiers are zero-based.
+		inputs+=({"-i",soundtrack});
 	}
 	rm(outputfile);
-	if (mode!="sync" && mode!="mini") times=({"-map","0:a:0"})+times;
-	exec(({"avconv","-i",movie,"-i",instr_prefix+soundtrack,"-i",words_prefix+soundtrack,"-map","0:v","-map","1:a:0","-map","2:a:0"})+times+({"-c:v","copy",outputfile}));
+	exec(({"avconv"})+inputs+map+times+({"-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
 }
