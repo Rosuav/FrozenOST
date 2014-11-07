@@ -59,7 +59,7 @@ constant modes=([
 	"full": ({"i9", "w9", "i", "w", "is", "ws", "i9s", "w9s", "", "s", "c"}), //Every plausible combination. Add to this as ideas come.
 ]);
 
-int main()
+int main(int argc,array(string) argv)
 {
 	int start=time();
 	array(string) times=({ });
@@ -72,6 +72,7 @@ int main()
 		foreach (times[-1]/":",string part) ignoreto=(ignoreto*60)+(int)part; ignoreto+=ignorefrom;
 		ignorefrom-=240; //I could measure the length of each track, but it's simpler to just allow four minutes, which is longer than any track I'm working with
 	}
+	if (argc>1 && modes[argv[1]]) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
