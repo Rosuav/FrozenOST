@@ -53,8 +53,8 @@ s: Synchronization track (the original sound track mixed in at reduced volume)
 */
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
-	"mini": ({"9", "w9"}),
-	"sync": ({"9s", "w9s"}),
+	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
+	"sync": ({"9s", "w9s"}), "isync": ({"9s"}), "wsync": ({"w9s"}), //Include sync track
 	"full": ({"9", "w9", "", "w", "s", "ws", "9s", "w9s", "c"}), //Every plausible combination. Add to this as ideas come.
 ]);
 
