@@ -61,7 +61,6 @@ int main(int argc,array(string) argv)
 		times=({"-ss",start,"-t",len||"0:01:00"});
 		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
 		foreach (times[-1]/":",string part) ignoreto=(ignoreto*60)+(int)part; ignoreto+=ignorefrom;
-		ignorefrom-=240; //I could measure the length of each track, but it's simpler to just allow four minutes, which is longer than any track I'm working with
 	}
 	if (argc>1 && modes[argv[1]]) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
 	array tracks=Stdio.read_file("tracks")/"\n"; //Lines of text
@@ -151,7 +150,6 @@ int main(int argc,array(string) argv)
 		if (parts[1]=="::") {verbose("%s: placing at %s\n",outfn,parts[1]=(string)lastpos); tracks[i]=parts*" ";} //Explicit abuttal - patch in the actual time, for the use of prevtracks
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
-		if (ignoreto && ignoreto<startpos) {tracks[i]=prevtracks[i]; continue;} //Can't have any effect on the resulting sound, so elide it - but don't save the change that wasn't done
 		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
 		if (pos>lastpos) verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);
 		else if (pos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
@@ -217,6 +215,7 @@ int main(int argc,array(string) argv)
 		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
 		if (!nonwordsmode) lastpos=hr*3600+min*60+sec; //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks.
+		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
 		if (startpos<=ignorefrom) continue;
 		foreach (trackdefs;int i;string t)
 		{
