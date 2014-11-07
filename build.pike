@@ -60,6 +60,7 @@ constant modes=([
 
 int main(int argc,array(string) argv)
 {
+	if (argc>1 && argv[1]=="san") exit(0,"San-check passed\n"); //Does it even compile? Very quick check, doesn't read or write any files.
 	int start=time();
 	array(string) times=({ });
 	string mode="";
