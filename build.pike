@@ -47,16 +47,15 @@ movie in order. (The first one listed will be the default playback track.) If th
 "c", it will be an exact copy of the original (mapped in directly). Otherwise, it consists of any
 number of the following letters, specifying inclusions:
 
-i: Instrumental tracks (those tagged [Instrumental] in the track list)
-w: Words tracks (those tagged [Words]; tracks with neither tag count as both)
+w: Words tracks (those tagged [Words]; automatically excludes [Instrumental] tracks)
 9: Shine-through tracks (note that they can still be excluded by a Words/Instrumental tag)
 s: Synchronization track (the original sound track mixed in at reduced volume)
 */
 constant modes=([
-	"": ({"i9", "w9", "c"}), //Default build
-	"mini": ({"i9", "w9"}),
-	"sync": ({"i9s", "w9s"}),
-	"full": ({"i9", "w9", "i", "w", "is", "ws", "i9s", "w9s", "", "s", "c"}), //Every plausible combination. Add to this as ideas come.
+	"": ({"9", "w9", "c"}), //Default build
+	"mini": ({"9", "w9"}),
+	"sync": ({"9s", "w9s"}),
+	"full": ({"9", "w9", "", "w", "s", "ws", "9s", "w9s", "c"}), //Every plausible combination. Add to this as ideas come.
 ]);
 
 int main(int argc,array(string) argv)
@@ -168,7 +167,7 @@ int main(int argc,array(string) argv)
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		string partial_start,partial_len,temposhift;
 		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
-		int include_instr=1,include_words=1;
+		int wordsmode=0,nonwordsmode=0;
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 		{
 			case 'S': partial_start=tag[1..]; prefix+=tag; break;
@@ -187,8 +186,8 @@ int main(int argc,array(string) argv)
 				partial_len=tag[1..]; prefix+=tag;
 				break;
 			case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
-			case 'I': include_words=0; break; //Instrumental track: skip on the "has words" soundtrack
-			case 'W': include_instr=0; break; //Words track: skip on the "all instrumental" soundtrack
+			case 'I': nonwordsmode=1; break; //Instrumental track: skip on the "has words" soundtrack
+			case 'W': wordsmode=1; break; //Words track: skip on the "all instrumental" soundtrack
 			default: break;
 		}
 		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
@@ -225,12 +224,11 @@ int main(int argc,array(string) argv)
 			changed=1;
 		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
-		if (include_words) lastpos=hr*3600+min*60+sec; //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks.
+		if (!nonwordsmode) lastpos=hr*3600+min*60+sec; //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks.
 		if (startpos<=ignorefrom) continue;
 		foreach (trackdefs;int i;string t)
 		{
-			if (has_value(t,'w') && !include_words) continue;
-			if (has_value(t,'i') && !include_instr) continue;
+			if (has_value(t,'w') ? nonwordsmode : wordsmode) continue;
 			if (!has_value(t,'9') && parts[0]=="999") continue;
 			tracklist[i]+=({outfn});
 		}
