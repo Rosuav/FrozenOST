@@ -242,7 +242,8 @@ int main(int argc,array(string) argv)
 			);
 			write("\n-- done in %.2fs\n",time(t));
 		}
-		map+=sprintf("-map %d:a:0 -metadata:s:a:%<d title=Soundtrack:%s",sizeof(inputs)/2,t)/" "; //Count the inputs prior to adding this one in - map identifiers are zero-based.
+		int id=sizeof(inputs)/2; //Count the inputs prior to adding this one in - map identifiers are zero-based.
+		map+=({"-map",id+":a:0","-metadata:s:a:"+(id-1),"title=Soundtrack:"+t});
 		inputs+=({"-i",soundtrack});
 	}
 	rm(outputfile);
