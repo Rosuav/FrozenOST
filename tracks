@@ -99,9 +99,9 @@ End of Heimr Arnadalr mess. It's still not perfect, but it mostly aligns. SIX PI
 132 1:31:01.3 [S104,L7]
 999 1:31:08.3 [L17.2,Words]
 132 1:31:25.5 [S111]
-227 1:32:34.25 [S60,L7] intro to end credits (the four chords)
-227 1:32:41 [S60] [Instrumental]
-110 1:32:40 [S60] [Words]
+227 1:32:34 [S60,L7] intro to end credits (the four chords) - needs fade-out 500
+227 1:32:41 [S60,Instrumental]
+110 1:32:40 [S60,Words]
 112 1:35:21 [S28.5,L68.5]
 112 1:36:27 [S97,L60]
 122 1:37:26
