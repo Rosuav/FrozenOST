@@ -155,7 +155,7 @@ int main(int argc,array(string) argv)
 		else if (pos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
 		else verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
-		string partial_start,partial_len,temposhift;
+		string partial_start,partial_len,temposhift,fade;
 		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
 		int wordsmode=0,nonwordsmode=0;
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
@@ -176,6 +176,7 @@ int main(int argc,array(string) argv)
 				partial_len=tag[1..]; prefix+=tag;
 				break;
 			case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
+			case 'F': fade=tag[1..]; break; //Passed directly to "sox fade": [type] fade-in-length [stop-time [fade-out-length]])
 			case 'I': nonwordsmode=1; break; //Instrumental track: skip on the "has words" soundtrack
 			case 'W': wordsmode=1; break; //Words track: skip on the "all instrumental" soundtrack
 			default: break;
@@ -210,6 +211,7 @@ int main(int argc,array(string) argv)
 			//eg: sox 111* 01.wav delay 0:00:05 0:00:05
 			array(string) args=({"sox",infn,outfn});
 			if (temposhift) args+=({"tempo","-m",temposhift});
+			if (fade) args+=({"fade"})+fade/"/";
 			exec(args+({"delay",start,start}));
 			changed=1;
 		}

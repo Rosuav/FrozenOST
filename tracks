@@ -15,9 +15,16 @@ Some pieces are given with alternates, [Instrumental] and [Words]. The former
 are used solely for the cases when the latter are being suppressed, and don't
 count towards the abuttal/overlap/gap stats, nor implicit abuttal.
 
+Fade-in and fade-out can be created with the "F" marker. This is a hyper-thin
+wrapper around the "fade" filter in sox; everything after the F is split on a
+slash, then fed to fade as arguments. A single number will give a fade-in; to
+fade out as well, add "/0/" and the fade-out time; to just fade out, "0/0/t".
+Note that this may conflict with the use of a temposhift - check 'man sox' if
+you need to use both together.
+
 111 0:00:05 has words
 101 0:01:45.2 has words
-999 0:03:23 [L18] needs a fade-in
+999 0:03:23 [L18,F1]
 112 0:03:42.85
 113 0:06:34
 102 0:08:18.4 has words
@@ -67,8 +74,8 @@ End of Heimr Arnadalr mess. It's still not perfect, but it mostly aligns. SIX PI
 107 0:47:31.35 [Words]
 999 0:49:32 [L16.3,Words]
 215 0:50:9.5
-217 0:51:05.2 [L9] needs a fade-out
-217 0:51:19.2 [S10] and a fade-in
+217 0:51:05.2 [L10,F0/0/1]
+217 0:51:19.2 [S10,F.25]
 122 0:53:54.5
 108 0:55:42.95 has words
 999 0:58:17 [L7]
@@ -99,7 +106,7 @@ End of Heimr Arnadalr mess. It's still not perfect, but it mostly aligns. SIX PI
 132 1:31:01.3 [S104,L7]
 999 1:31:08.3 [L17.2,Words]
 132 1:31:25.5 [S111]
-227 1:32:34 [S60,L7] intro to end credits (the four chords) - needs fade-out 500
+227 1:32:34 [S60,L7,F.5/0/.5] intro to end credits (the four chords)
 227 1:32:41 [S60,Instrumental]
 110 1:32:40 [S60,Words]
 112 1:35:21 [S28.5,L68.5]
