@@ -214,9 +214,10 @@ int main(int argc,array(string) argv)
 			changed=1;
 		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
-		if (!nonwordsmode) lastpos=hr*3600+min*60+sec; //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks.
+		float endpos=hr*3600+min*60+sec;
+		if (!nonwordsmode) lastpos=endpos; //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks.
 		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
-		if (startpos<=ignorefrom) continue;
+		if (endpos<ignorefrom) continue;
 		foreach (trackdefs;int i;string t)
 		{
 			if (has_value(t,'w') ? nonwordsmode : wordsmode) continue;
