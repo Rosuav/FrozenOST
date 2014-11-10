@@ -42,6 +42,13 @@ w: Words tracks (those tagged [Words]; automatically excludes [Instrumental] tra
 9: Shine-through tracks (note that they can still be excluded by a Words/Instrumental tag)
 s: Synchronization track (the original sound track mixed in at reduced volume)
 */
+constant trackdesc=([
+	"":"Instrumental","9":"Instrumental + shinethrough",
+	"w":"Words","w9":"Words + shinethrough",
+	"s":"Instrumental + sync","ws":"Words + sync",
+	"9s":"Instrumental + shinethrough + sync","w9s":"Words + shinethrough + sync",
+	"c":"Copy from original", //This one won't be used, it'll get the title copied too
+]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
@@ -246,7 +253,7 @@ int main(int argc,array(string) argv)
 			write("\n-- done in %.2fs\n",time(t));
 		}
 		int id=sizeof(inputs)/2; //Count the inputs prior to adding this one in - map identifiers are zero-based.
-		map+=({"-map",id+":a:0","-metadata:s:a:"+(id-1),"title=Soundtrack:"+t});
+		map+=({"-map",id+":a:0","-metadata:s:a:"+(id-1),"title="+(trackdesc[t]||"Soundtrack: "+t)});
 		inputs+=({"-i",soundtrack});
 	}
 	rm(outputfile);
