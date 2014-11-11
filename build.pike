@@ -47,13 +47,12 @@ constant trackdesc=([
 	"w":"Words","w9":"Words + shinethrough",
 	"s":"Instrumental + sync","ws":"Words + sync",
 	"9s":"Instrumental + shinethrough + sync","w9s":"Words + shinethrough + sync",
-	"c":"Copy from original", //This one won't be used, it'll get the title copied too
 ]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
 	"sync": ({"9s", "w9s"}), "isync": ({"9s"}), "wsync": ({"w9s"}), //Include sync track
-	"full": ({"9", "w9", "", "w", "s", "ws", "9s", "w9s", "c"}), //Every plausible combination. Add to this as ideas come.
+	"full": indices(trackdesc) + ({"c"}), //Everything we can think of!
 ]);
 
 int main(int argc,array(string) argv)
