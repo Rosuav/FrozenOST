@@ -1,8 +1,8 @@
 #!/usr/local/bin/pike
 
 //Source file locations
-constant movie="Frozen 2013 720p HDRIP x264 AC3 TiTAN.mkv";
-constant moviepath="/video/Disney/"; //moviepath+movie has to already exist; it'll be copied local for speed (and to allow *.mkv to be deleted safely). This directory can be mounted from a remote system.
+constant movie="Frozen original movie.mkv";
+constant moviesource="/video/Disney/Frozen 2013 720p HDRIP x264 AC3 TiTAN.mkv"; //Must already exist; it'll be copied local for speed (and to allow *.mkv to be deleted safely). This directory can be mounted from a remote system.
 constant ost_mp3="../Downloads/Various.Artists-Frozen.OST-2013.320kbps-FF"; //Directory of MP3 files
 
 //Intermediate file names
@@ -128,8 +128,8 @@ int main(int argc,array(string) argv)
 	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
 	if (!file_stat(movie))
 	{
-		write("Copying %s from %s\n",movie,moviepath);
-		Stdio.cp(moviepath+movie,movie);
+		write("Copying %s from %s\n",movie,moviesource);
+		Stdio.cp(moviesource,movie);
 	}
 	if (!file_stat(tweaked_soundtrack))
 	{
