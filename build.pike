@@ -158,6 +158,7 @@ int main(int argc,array(string) argv)
 	float lastpos=0.0;
 	float overlap=0.0,gap=0.0; int abuttals;
 	Stdio.File srt=Stdio.File((outputfile/".")[0]+".srt","wct");
+	int srtcnt=0;
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
@@ -237,7 +238,7 @@ int main(int argc,array(string) argv)
 			string desc=parts[0];
 			array(string) mp3=glob(parts[0]+"*.mp3",ostmp3dir); if (sizeof(mp3)) sscanf(mp3[0],"%*s - %s.mp3",desc);
 			if (parts[0]=="999") desc="Shine-through";
-			srt->write("%s --> %s\n%[0]s - %[1]s\n%s\n\n",srttime(pos),srttime(endpos),desc);
+			srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n%[0]d: %s\n\n",++srtcnt,srttime(pos),srttime(endpos),desc);
 		}
 		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
 		if (endpos<ignorefrom) continue;
