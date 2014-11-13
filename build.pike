@@ -52,7 +52,7 @@ constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
 	"sync": ({"9s", "w9s"}), "isync": ({"9s"}), "wsync": ({"w9s"}), //Include sync track
-	"full": indices(trackdesc) + ({"c"}), //Everything we can think of!
+	"full": ({ }), //Everything we can think of! Provided elsewhere as neither sort() nor Array.array_sort() can be used in a constant definition.
 ]);
 
 int main(int argc,array(string) argv)
@@ -119,6 +119,7 @@ int main(int argc,array(string) argv)
 	}
 	array(string) trackdefs=modes[mode];
 	if (!trackdefs) exit(0,"Unrecognized mode %O\n",mode);
+	if (mode=="full") trackdefs=sort(indices(trackdesc)) + ({"c"}); //Can't be done in the constant as sort() mutates its argument.
 	array prevtracks;
 	catch {prevtracks=decode_value(Stdio.read_file("prevtracks"));};
 	if (!prevtracks) prevtracks=({ });
