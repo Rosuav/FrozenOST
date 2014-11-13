@@ -167,9 +167,6 @@ int main(int argc,array(string) argv)
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
 		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
-		if (pos>lastpos) verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);
-		else if (pos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
-		else verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		string partial_start,partial_len,temposhift,fade;
 		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
@@ -234,6 +231,15 @@ int main(int argc,array(string) argv)
 		float endpos=hr*3600+min*60+sec;
 		if (!nonwordsmode) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
 		{
+			if (pos>lastpos)
+			{
+				verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);
+				//TODO: Auto-shine-through??
+				srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n(%f seconds)\n\n",++srtcnt,srttime(lastpos),srttime(pos),pos-lastpos);
+				lastpos=pos;
+			}
+			else if (pos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
+			else verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);
 			lastpos=endpos;
 			string desc=parts[0];
 			array(string) mp3=glob(parts[0]+"*.mp3",ostmp3dir); if (sizeof(mp3)) sscanf(mp3[0],"%*s - %s.mp3",desc);
