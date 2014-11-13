@@ -46,12 +46,12 @@ constant trackdesc=([
 	"":"Instrumental","9":"Instrumental + shinethrough",
 	"w":"Words","w9":"Words + shinethrough",
 	"s":"Instrumental + sync","ws":"Words + sync",
-	"9s":"Instrumental + shinethrough + sync","w9s":"Words + shinethrough + sync",
+	"s9":"Instrumental + shinethrough + sync","ws9":"Words + shinethrough + sync",
 ]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
-	"sync": ({"9s", "w9s"}), "isync": ({"9s"}), "wsync": ({"w9s"}), //Include sync track
+	"sync": ({"9s", "ws9"}), "isync": ({"s9"}), "wsync": ({"ws9"}), //Include sync track
 	"full": ({ }), //Everything we can think of! Provided elsewhere as neither sort() nor Array.array_sort() can be used in a constant definition.
 ]);
 
