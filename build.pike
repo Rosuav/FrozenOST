@@ -55,6 +55,13 @@ constant modes=([
 	"full": ({ }), //Everything we can think of! Provided elsewhere as neither sort() nor Array.array_sort() can be used in a constant definition.
 ]);
 
+//Convert a floating-point time position into .srt format: HH:MM:SS,mmm (comma between seconds and milliseconds)
+string srttime(float tm)
+{
+	int t=(int)tm;
+	return sprintf("%02d:%02d:%02d,%03d",t/3600,(t/60)%60,t%60,(int)((tm-t)*1000));
+}
+
 int main(int argc,array(string) argv)
 {
 	if (argc>1 && argv[1]=="san") exit(0,"San-check passed\n"); //Does it even compile? Very quick check, doesn't read or write any files.
@@ -145,11 +152,12 @@ int main(int argc,array(string) argv)
 	//Figure out the changes between the two versions
 	//Note that this copes poorly with insertions/deletions/moves, and will
 	//see a large number of changed tracks, and simply recreate them all.
-	array(string) dir=get_dir(),ostmp3dir;
+	array(string) dir=get_dir(),ostmp3dir=get_dir(ost_mp3);
 	int changed;
 	array(array(string)) tracklist=allocate(sizeof(trackdefs),({ }));
 	float lastpos=0.0;
 	float overlap=0.0,gap=0.0; int abuttals;
+	Stdio.File srt=Stdio.File((outputfile/".")[0]+".srt","wct");
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
@@ -196,7 +204,6 @@ int main(int argc,array(string) argv)
 			array(string) in=glob(prefix+" *.wav",dir); string infn;
 			if (!sizeof(in))
 			{
-				if (!ostmp3dir) ostmp3dir=get_dir(ost_mp3); //Cache on first load - it shouldn't change
 				string fn;
 				if (parts[0]=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
 				else
@@ -224,7 +231,14 @@ int main(int argc,array(string) argv)
 		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
 		float endpos=hr*3600+min*60+sec;
-		if (!nonwordsmode) lastpos=endpos; //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks.
+		if (!nonwordsmode) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
+		{
+			lastpos=endpos;
+			string desc=parts[0];
+			array(string) mp3=glob(parts[0]+"*.mp3",ostmp3dir); if (sizeof(mp3)) sscanf(mp3[0],"%*s - %s.mp3",desc);
+			if (parts[0]=="999") desc="Shine-through";
+			srt->write("%s --> %s\n%[0]s - %[1]s\n%s\n%s\n\n",srttime(pos),srttime(endpos),tracks[i],desc);
+		}
 		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
 		if (endpos<ignorefrom) continue;
 		foreach (trackdefs;int i;string t)
