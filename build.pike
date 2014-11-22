@@ -11,6 +11,7 @@ constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav"; //orig_soundtrac
 constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
 
 constant outputfile="Frozen plus OST.mkv"; //The video from movie, the audio from all combined_soundtrack files, and the audio from movie.
+constant trackidentifiers="trackids.srt"; //Surtitles file identifying each track as it comes up
 
 //Emit output iff in verbose mode
 //Note that it'll still evaluate its args even in non-verbose mode, for consistency.
@@ -157,7 +158,7 @@ int main(int argc,array(string) argv)
 	array(array(string)) tracklist=allocate(sizeof(trackdefs),({ }));
 	float lastpos=0.0;
 	float overlap=0.0,gap=0.0; int abuttals;
-	Stdio.File srt=Stdio.File((outputfile/".")[0]+".srt","wct");
+	Stdio.File srt=Stdio.File(trackidentifiers,"wct");
 	int srtcnt=0;
 	for (int i=0;i<tottracks;++i)
 	{
@@ -278,6 +279,8 @@ int main(int argc,array(string) argv)
 		inputs+=({"-i",soundtrack});
 	}
 	rm(outputfile);
+	map+=({"-map",(sizeof(inputs)/2)+":s"});
+	inputs+=({"-i",trackidentifiers});
 	exec(({"avconv"})+inputs+map+times+({"-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
