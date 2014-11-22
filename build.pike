@@ -261,7 +261,7 @@ int main(int argc,array(string) argv)
 	array(string) inputs=({"-i",movie}),map=({"-map","0:v"});
 	foreach (trackdefs;int i;string t)
 	{
-		if (t=="c") {map+=({"-map","0:a:0"}); continue;} //Easy. No input, just another thing to map in.
+		if (t=="c") {map+=({"-map","0:a:0","-c:a:"+(sizeof(inputs)/2-1),"copy"}); continue;} //Easy. No input, just another thing to map in.
 		if (has_value(t,'s')) tracklist[i]+=({tweaked_soundtrack});
 		string soundtrack=sprintf(combined_soundtrack,t);
 		if (!file_stat(soundtrack))
