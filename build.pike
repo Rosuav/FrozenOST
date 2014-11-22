@@ -10,7 +10,7 @@ constant orig_soundtrack="MovieSoundTrack.wav"; //Direct rip from movie above
 constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav"; //orig_soundtrack converted down to 2 channels and 44KHz
 constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
 
-constant outputfile="Frozen plus OST.mkv"; //The video from movie, the audio from [full_]combined_soundtrack, and the audio from movie.
+constant outputfile="Frozen plus OST.mkv"; //The video from movie, the audio from all combined_soundtrack files, and the audio from movie.
 
 //Emit output iff in verbose mode
 //Note that it'll still evaluate its args even in non-verbose mode, for consistency.
