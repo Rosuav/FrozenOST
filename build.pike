@@ -281,7 +281,7 @@ int main(int argc,array(string) argv)
 	rm(outputfile);
 	map+=({"-map",(sizeof(inputs)/2)+":s"});
 	inputs+=({"-i",trackidentifiers});
-	exec(({"avconv"})+inputs+map+times+({"-c:v","copy",outputfile}));
+	exec(({"avconv"})+inputs+map+times+({"-c:v","copy","-c:s","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
 }
