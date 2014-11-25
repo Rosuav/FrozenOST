@@ -46,8 +46,12 @@ s: Synchronization track (the original sound track mixed in at reduced volume)
 constant trackdesc=([
 	"":"Instrumental","9":"Instrumental + shinethrough",
 	"w":"Words","w9":"Words + shinethrough",
+	"m":"Instrumental + messy","m9":"Instrumental + messy + shinethrough",
+	"wm":"Words + messy","wm9":"Words + messy + shinethrough",
 	"s":"Instrumental + sync","ws":"Words + sync",
 	"s9":"Instrumental + shinethrough + sync","ws9":"Words + shinethrough + sync",
+	"sm":"Instrumental + sync + messy","wsm":"Words + sync + messy",
+	"sm9":"Instrumental + shinethrough + sync + messy","wsm9":"Words + shinethrough + sync + messy",
 ]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
@@ -172,6 +176,7 @@ int main(int argc,array(string) argv)
 		string partial_start,partial_len,temposhift,fade;
 		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
 		int wordsmode=0,nonwordsmode=0;
+		int messmode=0,nonmessmode=0;
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
 		{
 			case 'S': partial_start=tag[1..]; prefix+=tag; break;
@@ -193,6 +198,8 @@ int main(int argc,array(string) argv)
 			case 'F': fade=tag[1..]; break; //Passed directly to "sox fade": [type] fade-in-length [stop-time [fade-out-length]])
 			case 'I': nonwordsmode=1; break; //Instrumental track: skip on the "has words" soundtrack
 			case 'W': wordsmode=1; break; //Words track: skip on the "all instrumental" soundtrack
+			case 'N': nonmessmode=1; break; //Non-mess track: skip on the "has mess" soundtrack
+			case 'M': messmode=1; break; //Messy track: skip on the "avoid mess" soundtrack
 			default: break;
 		}
 		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
@@ -230,7 +237,7 @@ int main(int argc,array(string) argv)
 		}
 		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
 		float endpos=hr*3600+min*60+sec;
-		if (!nonwordsmode) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
+		if (!nonwordsmode && !nonmessmode) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
 		{
 			if (pos>lastpos)
 			{
@@ -252,6 +259,7 @@ int main(int argc,array(string) argv)
 		foreach (trackdefs;int i;string t)
 		{
 			if (has_value(t,'w') ? nonwordsmode : wordsmode) continue;
+			if (has_value(t,'m') ? nonmessmode : messmode) continue;
 			if (!has_value(t,'9') && parts[0]=="999") continue;
 			tracklist[i]+=({outfn});
 		}

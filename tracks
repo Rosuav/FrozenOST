@@ -33,13 +33,15 @@ you need to use both together.
 103 0:13:22.7 [Words]
 212 0:17:09.85
 Heimr Arnadalr is a bit edited...
-115 0:18:33.5 [L12.5,T1.1] until camera pans across Elsa's back
-115 :: [S13,L8.5,T1.15] until cut to close-up
-115 :: [S24,L9.8,T1.15] until Elsa bows for the crown
-115 0:18:59.31 [S34.5,L3,T1.15] while the crown is placed (overlapping the above)
-115 :: [S66,L2] penultimate chord
-115 :: [S72.5,L3] final chord
+115 0:18:33.5 [Mess,L12.5,T1.1] until camera pans across Elsa's back
+115 :: [Mess,S13,L8.5,T1.15] until cut to close-up
+115 :: [Mess,S24,L9.8,T1.15] until Elsa bows for the crown
+115 0:18:59.31 [Mess,S34.5,L3,T1.15] while the crown is placed (overlapping the above)
+115 :: [Mess,S66,L2] penultimate chord
+115 :: [Mess,S72.5,L3] final chord
 End of Heimr Arnadalr mess. It's still not perfect, but it mostly aligns. SIX PIECES! Ow.
+Alternatively, let's just shine-through that whole piece.
+999 0:18:33.5 [NonMess,L::]
 211 0:19:14
 222 0:19:54 [S5.250,L10.500]
 999 0:20:05 [L22,Words] - fanfare
