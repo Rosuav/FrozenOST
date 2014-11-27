@@ -130,8 +130,11 @@ int main(int argc,array(string) argv)
 		return 0;
 	}
 	array(string) trackdefs=modes[mode];
-	if (trackdesc[mode]) trackdefs=({mode});
-	if (!trackdefs) exit(0,"Unrecognized mode %O\n",mode);
+	if (!trackdefs)
+	{
+		if (trackdesc[mode]) trackdefs=({mode});
+		else exit(0,"Unrecognized mode %O\n",mode);
+	}
 	if (mode=="full") trackdefs=sort(indices(trackdesc)) + ({"c"}); //Can't be done in the constant as sort() mutates its argument.
 	array prevtracks;
 	catch {prevtracks=decode_value(Stdio.read_file("prevtracks"));};
