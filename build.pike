@@ -46,7 +46,7 @@ s: Synchronization track (the original sound track mixed in at reduced volume)
 constant trackdesc=([
 	"":"Instrumental","9":"Instrumental + shinethrough (best listening)",
 	"w":"Words","w9":"Words + shinethrough (best listening)",
-	"m":"Instrumental + messy","m9":"Instrumental + messy + shinethrough",
+	"m":"Instrumental + messy (most pure)","m9":"Instrumental + messy + shinethrough",
 	"wm":"Words + messy","wm9":"Words + messy + shinethrough",
 	"s":"Instrumental + sync","ws":"Words + sync",
 	"s9":"Instrumental + shinethrough + sync","ws9":"Words + shinethrough + sync",
