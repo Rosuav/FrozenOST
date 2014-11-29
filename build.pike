@@ -1,13 +1,10 @@
 #!/usr/local/bin/pike
 
 //Intermediate file names
-constant movie="Frozen original movie.mkv"; //Copied local from moviesource
+constant movie="Original movie.mkv"; //Copied local from moviesource
 constant orig_soundtrack="MovieSoundTrack.wav"; //Direct rip from movie above
 constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav"; //orig_soundtrack converted down to 2 channels and 44KHz
 constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
-
-//Output file names
-constant outputfile="Frozen plus OST.mkv"; //The video from movie, the audio from all combined_soundtrack files, and the audio from movie.
 constant trackidentifiers="trackids.srt"; //Surtitles file identifying each track as it comes up
 
 //Emit output iff in verbose mode
@@ -81,7 +78,8 @@ int main(int argc,array(string) argv)
 	string trackdata=Stdio.read_file("tracks");
 	sscanf(trackdata,"%*sMovieSource: %s\n",string moviesource);
 	sscanf(trackdata,"%*sOST_MP3: %s\n",string ost_mp3);
-	if (!moviesource || !ost_mp3) exit(1,"Must have MovieSource: and OST_MP3: identifiers in tracks file\n");
+	sscanf(trackdata,"%*sOutputFile: %s\n",string outputfile);
+	if (!moviesource || !ost_mp3 || !outputfile) exit(1,"Must have MovieSource, OST_MP3, and OutputFile identifiers in tracks file\n");
 	array tracks=trackdata/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
