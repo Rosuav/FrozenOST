@@ -143,8 +143,16 @@ int main(int argc,array(string) argv)
 	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
 	if (!file_stat(movie))
 	{
-		write("Copying %s from %s\n",movie,moviesource);
-		Stdio.cp(moviesource,movie);
+		if (has_suffix(moviesource,".mkv"))
+		{
+			write("Copying %s from %s\n",movie,moviesource);
+			Stdio.cp(moviesource,movie);
+		}
+		else
+		{
+			write("Creating %s from %s\n",movie,moviesource);
+			exec(({"avconv","-i",moviesource,movie}));
+		}
 	}
 	if (!file_stat(tweaked_soundtrack))
 	{
