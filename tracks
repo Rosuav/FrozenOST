@@ -22,6 +22,14 @@ fade out as well, add "/0/" and the fade-out time; to just fade out, "0/0/t".
 Note that this may conflict with the use of a temposhift - check 'man sox' if
 you need to use both together.
 
+Must already exist; it'll be copied local for speed (and to allow *.mkv to be
+deleted safely). This directory can be mounted from a remote system.
+MovieSource: /video/Disney/Frozen 2013 720p HDRIP x264 AC3 TiTAN.mkv
+
+Directory of MP3 files - each one should start with a numeric prefix followed
+by a space, and preferably then a human-readable name.
+OST_MP3: ../Downloads/Various.Artists-Frozen.OST-2013.320kbps-FF
+
 111 0:00:05 has words
 101 0:01:45.2 has words
 999 0:03:23 [L18,F1]
