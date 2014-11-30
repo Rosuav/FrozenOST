@@ -162,6 +162,7 @@ int main(int argc,array(string) argv)
 			exec(({"avconv","-i",movie,orig_soundtrack}));
 		}
 		write("Rebuilding %s (fixing bitrate and channels from %s)\n",tweaked_soundtrack,orig_soundtrack);
+		//TODO: Figure out the channel pattern and downmix only if it actually is 5.1
 		//Downmix from 5.1 to stereo: http://forum.doom9.org/archive/index.php/t-152034.html
 		exec(({"sox","-S",orig_soundtrack,"-r","44100",tweaked_soundtrack,"remix","-m","1v0.3254,3v0.2301,5v0.2818,6v0.1627","2v0.3254,3v0.2301,5v-0.1627,6v-0.2818"}));
 	}
