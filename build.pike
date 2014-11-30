@@ -279,7 +279,7 @@ int main(int argc,array(string) argv)
 			string desc=parts[0];
 			array(string) mp3=glob(parts[0]+"*.mp3",ostmp3dir); if (sizeof(mp3)) sscanf(mp3[0],"%*s - %s.mp3",desc);
 			if (parts[0]=="999") desc="Shine-through";
-			srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n%d: %s\n\n",++srtcnt,srttime(pos),srttime(endpos),i,desc);
+			srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n%02d: %s\n\n",++srtcnt,srttime(pos),srttime(endpos),i,desc);
 		}
 		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
 		if (endpos<ignorefrom) continue;
