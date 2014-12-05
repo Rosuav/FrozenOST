@@ -36,6 +36,7 @@ number of the following letters, specifying inclusions:
 w: Words tracks (those tagged [Words]; automatically excludes [Instrumental] tracks)
 9: Shine-through tracks (note that they can still be excluded by a Words/Instrumental tag)
 s: Synchronization track (the original sound track mixed in at reduced volume)
+m: Messy tracks (those tagged [Mess]; automatically excludes [NonMess] tracks)
 */
 constant trackdesc=([
 	"":"Instrumental","9":"Instrumental + shinethrough (best listening)",
