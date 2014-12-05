@@ -115,10 +115,12 @@ Alternatively, let's just shine-through that whole piece.
 130 1:22:12.7 [L213]
 130 1:25:45.7 [S210,F.5] overlaps the above, so this just extends the tremolo
 131 1:27:12 [S26] not sure what the first half-minute is
+Messy stuff from here...
 132 1:29:07 [L103] not quite right all the way (??)
 999 1:30:50 [L6,Words]
 132 1:31:01.3 [S104,L7]
 999 1:31:08.3 [L17.2,Words]
+... to here.
 132 1:31:25.5 [S111]
 227 1:32:34 [S60,L7,F.5/0/.5] intro to end credits (the four chords)
 227 1:32:41 [S60,Instrumental]
@@ -128,4 +130,4 @@ Alternatively, let's just shine-through that whole piece.
 122 1:37:26
 ;132 1:39:12 [L3] kinda mostly
 ;132 1:39:20 [S13] for maybe half a minute, then not sure
-999 1:39:12 [L148] or just cheat. Can I use this to replace (some of) the messy stuff from 1:27:12 to 1:31:25.5?
+999 1:39:12 [L148] or just cheat. Can I use this to replace (some of) the messy stuff from 1:29:07 to 1:31:25.5?
