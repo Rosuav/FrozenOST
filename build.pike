@@ -303,12 +303,12 @@ int main(int argc,array(string) argv)
 		if (!file_stat(soundtrack))
 		{
 			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist[i]));
-			int t=time();
+			int tm=time();
 			array trim=ignoreto?({"trim","0",(string)ignoreto}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
 			Process.run(({"sox","-S","-m","-v",".5"})+tracklist[i]/1*({"-v",".5"})+({soundtrack})+trim,
 				(["stderr":lambda(string data) {write(replace(data,"\n","\r"));}]) //Write everything on one line, thus disposing of the unwanted spam :)
 			);
-			write("\n-- done in %.2fs\n",time(t));
+			write("\n-- done in %.2fs\n",time(tm));
 		}
 		int id=sizeof(inputs)/2; //Count the inputs prior to adding this one in - map identifiers are zero-based.
 		map+=({"-map",id+":a:0","-metadata:s:a:"+(id-1),"title="+(trackdesc[t]||"Soundtrack: "+t)});
