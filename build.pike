@@ -346,7 +346,9 @@ int main(int argc,array(string) argv)
 				parts=({sprintf(combined_soundtrack,t+"!"),right_soundtrack});
 				moreargs+=({"remix","1","0"});
 			}
-			Process.run(({"sox","-S","-m","-v",".5"})+tracklist[i]/1*({"-v",".5"})+({parts[0]})+trim+moreargs,
+			//SoX refuses to mix one track, even if it's doing other effects. So remove the -m switch when there's only one track.
+			array(string) mixornot=({"-m"})*(sizeof(tracklist[i])>1);
+			Process.run(({"sox","-S"})+mixornot+({"-v",".5"})+tracklist[i]/1*({"-v",".5"})+({parts[0]})+trim+moreargs,
 				(["stderr":lambda(string data) {write(replace(data,"\n","\r"));}]) //Write everything on one line, thus disposing of the unwanted spam :)
 			);
 			if (sizeof(parts)>1) Process.run(({"sox","-S","-m"})+parts+({soundtrack})+trim,
