@@ -319,7 +319,7 @@ int main(int argc,array(string) argv)
 		{
 			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist[i]));
 			int tm=time();
-			array trim=ignoreto?({"trim","0",(string)ignoreto}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
+			array trim=ignoreto?({"trim","0",mstime(ignoreto)}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
 			array(string) moreargs=({ });
 			array(string) parts=({soundtrack}); //More than one part causes temporary build to the first track, then combining of all parts into the final
 			//TODO: Dedup these two
