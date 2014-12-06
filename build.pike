@@ -183,8 +183,11 @@ int main(int argc,array(string) argv)
 			case 2: msg=""; args=({ }); break; //2 channels - assume stereo
 			case 6:
 				msg=" and downmixing 5.1->stereo";
+				//NOTE: It seems there's a sync error with this. Have no idea why. Is this
+				//an issue only with Frozen, or is it a script bug, or a 5:1->stereo issue,
+				//or what? For now, hard-coding in a short delay to resync them.
 				//Downmix from 5.1 to stereo: http://forum.doom9.org/archive/index.php/t-152034.html
-				args=({"remix","-m","1v0.3254,3v0.2301,5v0.2818,6v0.1627","2v0.3254,3v0.2301,5v-0.1627,6v-0.2818"});
+				args=({"remix","-m","1v0.3254,3v0.2301,5v0.2818,6v0.1627","2v0.3254,3v0.2301,5v-0.1627,6v-0.2818","delay",".1",".1"});
 				break;
 			default:
 				werror("WARNING: Unknown channel count %d in sound track, results may be unideal\n",channels);
@@ -328,10 +331,7 @@ int main(int argc,array(string) argv)
 				if (!file_stat(left_soundtrack))
 				{
 					write("Rebuilding %s (muting channel from %s)\n",left_soundtrack,tweaked_soundtrack);
-					//NOTE: It seems there's a sync error with this. Have no idea why. Is this
-					//an issue only with Frozen, or is it a script bug, or a 5:1->stereo issue,
-					//or what? For now, hard-coding in a short delay to resync them.
-					exec(({"sox","-S",tweaked_soundtrack,left_soundtrack,"remix","1","0","delay",".1",".1"}));
+					exec(({"sox","-S",tweaked_soundtrack,left_soundtrack,"remix","1","0"}));
 				}
 				parts=({sprintf(combined_soundtrack,t+"!"),left_soundtrack});
 				moreargs+=({"remix","0","2"});
@@ -341,8 +341,7 @@ int main(int argc,array(string) argv)
 				if (!file_stat(right_soundtrack))
 				{
 					write("Rebuilding %s (muting channel from %s)\n",right_soundtrack,tweaked_soundtrack);
-					//As above.
-					exec(({"sox","-S",tweaked_soundtrack,right_soundtrack,"remix","0","2","delay",".1",".1"}));
+					exec(({"sox","-S",tweaked_soundtrack,right_soundtrack,"remix","0","2"}));
 				}
 				parts=({sprintf(combined_soundtrack,t+"!"),right_soundtrack});
 				moreargs+=({"remix","1","0"});
