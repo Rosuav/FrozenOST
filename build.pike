@@ -3,7 +3,10 @@
 //Intermediate file names
 constant movie="Original movie.mkv"; //Copied local from moviesource
 constant orig_soundtrack="MovieSoundTrack.wav"; //Direct rip from movie above
-constant tweaked_soundtrack="MovieSoundTrack_bitratefixed.wav"; //orig_soundtrack converted down to 2 channels and 44KHz
+constant modified_soundtrack="MovieSoundTrack_%s.wav"; //orig_soundtrack with some modification, keyword in the %s
+constant tweaked_soundtrack=sprintf(modified_soundtrack,"bitratefixed"); //Converted down to 2 channels and 44KHz
+constant left_soundtrack=sprintf(modified_soundtrack,"leftonly"); //With the right channel muted...
+constant right_soundtrack=sprintf(modified_soundtrack,"rightonly"); //or the left channel muted.
 constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
 constant trackidentifiers="trackids.srt"; //Surtitles file identifying each track as it comes up
 
@@ -37,6 +40,8 @@ w: Words tracks (those tagged [Words]; automatically excludes [Instrumental] tra
 9: Shine-through tracks (note that they can still be excluded by a Words/Instrumental tag)
 s: Synchronization track (the original sound track mixed in at reduced volume)
 m: Messy tracks (those tagged [Mess]; automatically excludes [NonMess] tracks)
+l: Include the original on the left channel, and everything listed here on the right channel
+r: The converse - original audio on the right, OST mix on the left. Good for synchronization.
 */
 constant trackdesc=([
 	"":"Instrumental","9":"Instrumental + shinethrough (best listening)",
@@ -47,6 +52,8 @@ constant trackdesc=([
 	"s9":"Instrumental + shinethrough + sync","ws9":"Words + shinethrough + sync",
 	"sm":"Instrumental + sync + messy","wsm":"Words + sync + messy",
 	"sm9":"Instrumental + shinethrough + sync + messy","wsm9":"Words + shinethrough + sync + messy",
+	"rm":"Instrumental l/r sync","wrm":"Words l/r sync",
+	"rm9":"Instrumental + shinethrough l/r sync","wrm9":"Words + shinethrough l/r sync",
 ]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
@@ -305,8 +312,34 @@ int main(int argc,array(string) argv)
 			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist[i]));
 			int tm=time();
 			array trim=ignoreto?({"trim","0",(string)ignoreto}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
-			Process.run(({"sox","-S","-m","-v",".5"})+tracklist[i]/1*({"-v",".5"})+({soundtrack})+trim,
+			array(string) moreargs=({ });
+			array(string) parts=({soundtrack}); //More than one part causes temporary build to the first track, then combining of all parts into the final
+			//TODO: Dedup these two
+			if (has_value(t,'l'))
+			{
+				if (!file_stat(left_soundtrack))
+				{
+					write("Rebuilding %s (muting channel from %s)\n",left_soundtrack,tweaked_soundtrack);
+					exec(({"sox","-S",tweaked_soundtrack,left_soundtrack,"remix","1","0"}));
+				}
+				parts=({sprintf(combined_soundtrack,t+"!"),left_soundtrack});
+				moreargs+=({"remix","0","2"});
+			}
+			if (has_value(t,'r'))
+			{
+				if (!file_stat(right_soundtrack))
+				{
+					write("Rebuilding %s (muting channel from %s)\n",right_soundtrack,tweaked_soundtrack);
+					exec(({"sox","-S",tweaked_soundtrack,right_soundtrack,"remix","0","2"}));
+				}
+				parts=({sprintf(combined_soundtrack,t+"!"),right_soundtrack});
+				moreargs+=({"remix","1","0"});
+			}
+			Process.run(({"sox","-S","-m","-v",".5"})+tracklist[i]/1*({"-v",".5"})+({parts[0]})+trim+moreargs,
 				(["stderr":lambda(string data) {write(replace(data,"\n","\r"));}]) //Write everything on one line, thus disposing of the unwanted spam :)
+			);
+			if (sizeof(parts)>1) Process.run(({"sox","-S","-m"})+parts+({soundtrack})+trim,
+				(["stderr":lambda(string data) {write(replace(data,"\n","\r"));}]) //As above
 			);
 			write("\n-- done in %.2fs\n",time(tm));
 		}
