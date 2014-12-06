@@ -62,11 +62,16 @@ constant modes=([
 	"full": ({ }), //Everything we can think of! Provided elsewhere as neither sort() nor Array.array_sort() can be used in a constant definition.
 ]);
 
-//Convert a floating-point time position into .srt format: HH:MM:SS,mmm (comma between seconds and milliseconds)
-string srttime(float tm)
+//Convert a millisecond time position into .srt format: HH:MM:SS,mmm (comma between seconds and milliseconds)
+string srttime(int tm)
 {
-	int t=(int)tm;
-	return sprintf("%02d:%02d:%02d,%03d",t/3600,(t/60)%60,t%60,(int)((tm-t)*1000));
+	return sprintf("%02d:%02d:%02d,%03d",tm/3600000,(tm/60000)%60,(tm/1000)%60,tm%1000);
+}
+
+//Convert a millisecond time position into sss.mmm
+string mstime(int tm)
+{
+	return sprintf("%d.%03d",tm/1000,tm%1000);
 }
 
 int main(int argc,array(string) argv)
@@ -81,6 +86,7 @@ int main(int argc,array(string) argv)
 		times=({"-ss",start,"-t",len||"0:01:00"});
 		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
 		foreach (times[-1]/":",string part) ignoreto=(ignoreto*60)+(int)part; ignoreto+=ignorefrom;
+		ignorefrom*=1000; ignoreto*=1000; //TODO: Actually use subsecond resolution
 	}
 	if (argc>1 && argv[1]!="" && (modes[argv[1]] || trackdesc[argv[1]])) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
 	string trackdata=Stdio.read_file("tracks");
@@ -195,18 +201,19 @@ int main(int argc,array(string) argv)
 	array(string) dir=get_dir(),ostmp3dir=get_dir(ost_mp3);
 	int changed;
 	array(array(string)) tracklist=allocate(sizeof(trackdefs),({ }));
-	float lastpos=0.0;
-	float overlap=0.0,gap=0.0; int abuttals;
+	//Positions are in milliseconds
+	int lastpos=0;
+	int overlap=0,gap=0; int abuttals;
 	Stdio.File srt=Stdio.File(trackidentifiers,"wct");
 	int srtcnt=0;
 	for (int i=0;i<tottracks;++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
 		array parts=tracks[i]/" "; if (sizeof(parts)==1) parts+=({""});
-		if (parts[1]=="::") {verbose("%s: placing at %s\n",outfn,parts[1]=(string)lastpos); tracks[i]=parts*" ";} //Explicit abuttal - patch in the actual time, for the use of prevtracks
+		if (parts[1]=="::") {verbose("%s: placing at %s\n",outfn,parts[1]=mstime(lastpos)); tracks[i]=parts*" ";} //Explicit abuttal - patch in the actual time, for the use of prevtracks
 		string prefix=parts[0],start=parts[1];
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
-		float pos=(float)startpos; if (has_value(start,'.')) pos+=(float)("."+(start/".")[-1]); //Patch in the decimal :)
+		startpos*=1000; if (has_value(start,'.')) startpos+=(int)((start/".")[-1]+"000")[..2]; //Patch in subsecond resolution by padding to exactly three digits
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		string partial_start,partial_len,temposhift,fade;
 		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
@@ -224,8 +231,8 @@ int main(int argc,array(string) argv)
 					//Code duplicated from the above
 					string next=(tracks[i+1]/" ")[1];
 					int nextpos; foreach (next/":",string part) nextpos=(nextpos*60)+(int)part;
-					float npos=(float)nextpos; if (has_value(next,'.')) npos+=(float)("."+(next/".")[-1]);
-					tag="L"+(npos-pos);
+					int npos=nextpos*1000; if (has_value(next,'.')) npos+=(int)((next/".")[-1]+"000")[..2];
+					tag="L"+mstime(npos-startpos);
 				}
 				partial_len=tag[1..]; prefix+=tag;
 				break;
@@ -270,24 +277,25 @@ int main(int argc,array(string) argv)
 			exec(args+({"delay",start,start}));
 			changed=1;
 		}
-		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%f",int hr,int min,float sec);
-		float endpos=hr*3600+min*60+sec;
+		//TODO: Use `sox --i -D outfn` for better precision
+		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%d.%s ",int hr,int min,int sec,string ms);
+		int endpos=hr*3600000+min*60000+sec*1000+(int)(ms+"000")[..2];
 		if (!nonwordsmode && !nonmessmode) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
 		{
-			if (pos>lastpos)
+			if (startpos>lastpos)
 			{
-				verbose("%s: gap %.2f -> %.2f\n",outfn,pos-lastpos,gap+=pos-lastpos);
+				verbose("%s: gap %s -> %s\n",outfn,mstime(startpos-lastpos),mstime(gap+=startpos-lastpos));
 				//TODO: Auto-shine-through??
-				srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n(%f seconds)\n\n",++srtcnt,srttime(lastpos),srttime(pos),pos-lastpos);
-				lastpos=pos;
+				srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n(%s seconds)\n\n",++srtcnt,srttime(lastpos),srttime(startpos),mstime(startpos-lastpos));
+				lastpos=startpos;
 			}
-			else if (pos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
-			else verbose("%s: overlap %.2f -> %.2f\n",outfn,lastpos-pos,overlap+=lastpos-pos);
+			else if (startpos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
+			else verbose("%s: overlap %s -> %s\n",outfn,mstime(lastpos-startpos),mstime(overlap+=lastpos-startpos));
 			lastpos=endpos;
 			string desc=parts[0];
 			array(string) mp3=glob(parts[0]+"*.mp3",ostmp3dir); if (sizeof(mp3)) sscanf(mp3[0],"%*s - %s.mp3",desc);
 			if (parts[0]=="999") desc="Shine-through";
-			srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n%02d: %s\n\n",++srtcnt,srttime(pos),srttime(endpos),i,desc);
+			srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n%02d: %s\n\n",++srtcnt,srttime(startpos),srttime(endpos),i,desc);
 		}
 		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
 		if (endpos<ignorefrom) continue;
@@ -299,7 +307,7 @@ int main(int argc,array(string) argv)
 			tracklist[i]+=({outfn});
 		}
 	}
-	write("Total gap: %.2f\nTotal abutting tracks: %d\nTotal overlap: %.2f\nFinal position: %.2f\nNote that these figures may apply to only the beginning of the movie.\n",gap,abuttals,overlap,lastpos);
+	write("Total gap: %s\nTotal abutting tracks: %d\nTotal overlap: %s\nFinal position: %s\nNote that these figures may apply to only the beginning of the movie.\n",mstime(gap),abuttals,mstime(overlap),mstime(lastpos));
 	if (changed) rm(glob(sprintf(combined_soundtrack,"*"),get_dir())[*]);
 	array(string) inputs=({"-i",movie}),map=({"-map","0:v"});
 	foreach (trackdefs;int i;string t)
