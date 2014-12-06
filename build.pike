@@ -75,7 +75,7 @@ int main(int argc,array(string) argv)
 		foreach (start/":",string part) ignorefrom=(ignorefrom*60)+(int)part;
 		foreach (times[-1]/":",string part) ignoreto=(ignoreto*60)+(int)part; ignoreto+=ignorefrom;
 	}
-	if (argc>1 && modes[argv[1]]) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
+	if (argc>1 && argv[1]!="" && (modes[argv[1]] || trackdesc[argv[1]])) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
 	string trackdata=Stdio.read_file("tracks");
 	sscanf(trackdata,"%*sMovieSource: %s\n",string moviesource);
 	sscanf(trackdata,"%*sOST_MP3: %s\n",string ost_mp3);
