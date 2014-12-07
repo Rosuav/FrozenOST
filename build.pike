@@ -361,8 +361,13 @@ int main(int argc,array(string) argv)
 		inputs+=({"-i",soundtrack});
 	}
 	rm(outputfile);
-	map+=({"-map",(sizeof(inputs)/2)+":s"});
-	inputs+=({"-i",trackidentifiers});
+	if (!ignorefrom && !ignoreto)
+	{
+		//The surtitles can cause ugly endings in partial builds, so it's tidier
+		//to just suppress them. You could choose to reenable them if you like.
+		map+=({"-map",(sizeof(inputs)/2)+":s"});
+		inputs+=({"-i",trackidentifiers});
+	}
 	exec(({"avconv"})+inputs+map+times+({"-c:v","copy","-c:s","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
