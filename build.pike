@@ -74,6 +74,10 @@ string mstime(int tm)
 	return sprintf("%d.%03d",tm/1000,tm%1000);
 }
 
+//Write everything on one line, thus disposing of the unwanted spam :)
+void onelineoutput(string data) {write(replace(data,"\n","\r"));}
+mapping oneline=(["stderr":onelineoutput]);
+
 int main(int argc,array(string) argv)
 {
 	if (argc>1 && argv[1]=="san") exit(0,"San-check passed\n"); //Does it even compile? Very quick check, doesn't read or write any files.
@@ -348,12 +352,8 @@ int main(int argc,array(string) argv)
 			}
 			//SoX refuses to mix one track, even if it's doing other effects. So remove the -m switch when there's only one track.
 			array(string) mixornot=({"-m"})*(sizeof(tracklist[i])>1);
-			Process.run(({"sox","-S"})+mixornot+({"-v",".5"})+tracklist[i]/1*({"-v",".5"})+({parts[0]})+trim+moreargs,
-				(["stderr":lambda(string data) {write(replace(data,"\n","\r"));}]) //Write everything on one line, thus disposing of the unwanted spam :)
-			);
-			if (sizeof(parts)>1) Process.run(({"sox","-S","-m"})+parts+({soundtrack})+trim,
-				(["stderr":lambda(string data) {write(replace(data,"\n","\r"));}]) //As above
-			);
+			Process.run(({"sox","-S"})+mixornot+({"-v",".5"})+tracklist[i]/1*({"-v",".5"})+({parts[0]})+trim+moreargs,oneline);
+			if (sizeof(parts)>1) {write("\n"); Process.run(({"sox","-S","-m"})+parts+({soundtrack})+trim,oneline);}
 			write("\n-- done in %.2fs\n",time(tm));
 		}
 		int id=sizeof(inputs)/2; //Count the inputs prior to adding this one in - map identifiers are zero-based.
