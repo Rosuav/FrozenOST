@@ -21,6 +21,7 @@ void verbose(mixed ... args) { };
 void exec(array(string) cmd)
 {
 	int t=time();
+	//write("%{%s %}\n",Process.sh_quote(cmd[*]));
 	Process.create_process(cmd)->wait();
 	float tm=time(t);
 	if (tm>5.0) verbose("-- done in %.2fs\n",tm);
