@@ -280,7 +280,22 @@ int main(int argc,array(string) argv)
 			write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
 			//eg: sox 111* 01.wav delay 0:00:05 0:00:05
 			array(string) args=({"sox",infn,outfn});
-			if (temposhift) args+=({"tempo","-m",temposhift});
+			if (temposhift)
+			{
+				//When the tempo shift is very close to 1.0, the -l parameter
+				//gives better results (less audible distortion) than -m does,
+				//but otherwise, definitely use -m. Trouble is, the docs aren't
+				//very clear on what "very close" is; all I know is, .999 is
+				//indeed close, and 1.1 isn't. Experimentation suggests that
+				//even .995 isn't close enough; at .998 and 1.002, both forms
+				//produce easily acceptable results, so that's what I'm using
+				//as my cut-over point. If it's nearer than that (and since
+				//they both work just fine at that figure, I'm not bothered by
+				//floating-point issues and platform differences), I use -l.
+				float tempo=(float)temposhift;
+				if (tempo>.998 && tempo<1.002) args+=({"tempo","-l",temposhift});
+				else args+=({"tempo","-m",temposhift});
+			}
 			if (fade) args+=({"fade"})+fade/"/";
 			exec(args+({"delay",start,start}));
 			changed=1;
