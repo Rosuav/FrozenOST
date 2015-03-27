@@ -58,6 +58,7 @@ constant trackdesc=([
 ]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
+	"lr": ({"rm", "m", "c"}), //L/R sync
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
 	"sync": ({"9s", "ws9"}), "isync": ({"s9"}), "wsync": ({"ws9"}), //Include sync track
 	"full": ({ }), //Everything we can think of! Provided elsewhere as neither sort() nor Array.array_sort() can be used in a constant definition.
