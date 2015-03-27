@@ -43,7 +43,10 @@ OutputFile: Frozen plus OST.mkv
 114 0:11:38.55
 224 0:13:22.61 [Instrumental,T.999]
 103 0:13:22.75 [Words,T.999] slightly off position in the recit
-212 0:17:09.85 needs to be split
+212 0:17:09.85 [L27] possibly all of this track needs to be T.999, not sure
+212 0:17:39.6 [S28,L1.5]
+212 0:17:47.922 [S30.6,L28,T.999]
+212 0:18:17.3 [S58.5]
 Heimr Arnadalr is a bit edited...
 115 0:18:33.5 [Mess,L12.5,T1.1] until camera pans across Elsa's back
 115 :: [Mess,S13,L8.5,T1.15] until cut to close-up
