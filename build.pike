@@ -1,4 +1,14 @@
 #!/usr/local/bin/pike
+/*
+To build the full Frozen OST, you will need to:
+1) Install avconv, sox, and of course Pike
+2) Build at least something of Frozen OST. A default build is probably the simplest: just run this script ("pike build" or "./build.pike").
+3) Build Flemish Frozen, to create the subs and audio for that.
+4) Then and only then, run a full build here ("pike build full" or "./build full")
+
+This will chug and chug and CHUG as it builds quite a few separate pieces. Currently there's no -j option to
+parallelize, but several of the steps are capable of using multiple CPU cores intrinsically.
+*/
 
 //Intermediate file names
 constant movie="Original movie.mkv"; //Copied local from moviesource
