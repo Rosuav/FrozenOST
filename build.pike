@@ -69,6 +69,7 @@ constant trackdesc=([
 ]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
+	"f": ({"f"/*, "c"*/}), //Flemish and English (requires FlemishFrozen in parallel to this project)
 	"lr": ({"rm", "m", "c"}), //L/R sync
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
 	"sync": ({"9s", "ws9"}), "isync": ({"s9"}), "wsync": ({"ws9"}), //Include sync track
