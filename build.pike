@@ -107,10 +107,10 @@ int main(int argc,array(string) argv)
 		ignorefrom*=1000; ignoreto*=1000; //TODO: Actually use subsecond resolution
 	}
 	if (argc>1 && argv[1]!="" && (modes[argv[1]] || trackdesc[argv[1]])) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
-	string trackdata=Stdio.read_file("tracks");
-	sscanf(trackdata,"%*sMovieSource: %s\n",string moviesource);
-	sscanf(trackdata,"%*sOST_MP3: %s\n",string ost_mp3);
-	sscanf(trackdata,"%*sOutputFile: %s\n",string outputfile);
+	string trackdata="\n"+Stdio.read_file("tracks");
+	sscanf(trackdata,"%*s\nMovieSource: %s\n",string moviesource);
+	sscanf(trackdata,"%*s\nOST_MP3: %s\n",string ost_mp3);
+	sscanf(trackdata,"%*s\nOutputFile: %s\n",string outputfile);
 	if (!moviesource || !ost_mp3 || !outputfile) exit(1,"Must have MovieSource, OST_MP3, and OutputFile identifiers in tracks file\n");
 	array tracks=trackdata/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
