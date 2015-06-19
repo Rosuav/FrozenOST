@@ -44,8 +44,7 @@ void exec(array(string) cmd)
 
 Each build mode specifies a number of sound tracks, which will be incorporated into the resulting
 movie in order. (The first one listed will be the default playback track.) If the sound track is
-"c", it will be an exact copy of the original (mapped in directly). If it is "f", Flemish audio
-will be picked up from "../FlemishFrozen/Flemish_corrected.wav". Otherwise, it consists of any
+"c", it will be an exact copy of the original (mapped in directly). Otherwise, it consists of any
 number of the following letters, specifying inclusions:
 
 w: Words tracks (those tagged [Words]; automatically excludes [Instrumental] tracks)
@@ -69,7 +68,6 @@ constant trackdesc=([
 ]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
-	"f": ({"f"/*, "c"*/}), //Flemish and English (requires FlemishFrozen in parallel to this project)
 	"lr": ({"rm", "m", "c"}), //L/R sync
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
 	"sync": ({"9s", "ws9"}), "isync": ({"s9"}), "wsync": ({"ws9"}), //Include sync track
@@ -166,12 +164,7 @@ int main(int argc,array(string) argv)
 		if (trackdesc[mode]) trackdefs=({mode});
 		else exit(0,"Unrecognized mode %O\n",mode);
 	}
-	if (mode=="full")
-	{
-		trackdefs=sort(indices(trackdesc)); //Can't be done in the constant as sort() mutates its argument.
-		if (file_stat("../FlemishFrozen/Flemish_corrected.wav")) trackdefs += ({"f", "c"});
-		else trackdefs += ({"c"});
-	}
+	if (mode=="full") trackdefs=sort(indices(trackdesc)) + ({"c"}); //Can't be done in the constant as sort() mutates its argument.
 	array prevtracks;
 	catch {prevtracks=decode_value(Stdio.read_file("prevtracks"));};
 	if (!prevtracks) prevtracks=({ });
@@ -356,12 +349,6 @@ int main(int argc,array(string) argv)
 		if (t=="c") {map+=({"-map","0:a:0","-c:a:"+(sizeof(inputs)/2-1),"copy"}); continue;} //Easy. No input, just another thing to map in.
 		if (has_value(t,'s')) tracklist[i]+=({tweaked_soundtrack});
 		string soundtrack=sprintf(combined_soundtrack,t);
-		if (t=="f")
-		{
-			soundtrack="../FlemishFrozen/Flemish_corrected.wav";
-			if (!file_stat(soundtrack)) continue; //If it doesn't exist, skip it. We can't rebuild it, not from this project.
-			t="Flemish";
-		}
 		if (!file_stat(soundtrack))
 		{
 			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist[i]));
@@ -407,12 +394,6 @@ int main(int argc,array(string) argv)
 		//to just suppress them. You could choose to reenable them if you like.
 		map+=({"-map",(sizeof(inputs)/2)+":s"});
 		inputs+=({"-i",trackidentifiers});
-	}
-	if (has_value(trackdefs,"f") && file_stat("../FlemishFrozen/_combined.srt"))
-	{
-		//When we're adding Flemish audio, also add Flemish subtitles.
-		map+=({"-map",(sizeof(inputs)/2)+":s"});
-		inputs+=({"-i","../FlemishFrozen/_combined.srt"});
 	}
 	exec(({"avconv"})+inputs+map+times+({"-c:v","copy","-c:s","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
