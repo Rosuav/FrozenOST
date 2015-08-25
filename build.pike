@@ -348,7 +348,7 @@ int main(int argc,array(string) argv)
 		string soundtrack=sprintf(combined_soundtrack,t);
 		if (!file_stat(soundtrack))
 		{
-			write("Rebuilding %s from %d parts\n",soundtrack,sizeof(tracklist[i]));
+			write("Rebuilding %s (%d/%d) from %d parts\n",soundtrack,i+1,sizeof(trackdefs),sizeof(tracklist[i]));
 			int tm=time();
 			array trim=ignoreto?({"trim","0",mstime(ignoreto)}):({ }); //If we're doing a partial build, cut it off at the ignore position to save processing.
 			array(string) moreargs=({ });
