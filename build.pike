@@ -201,6 +201,9 @@ int main(int argc,array(string) argv)
 				//or what? For now, hard-coding in a short delay to resync them.
 				//Downmix from 5.1 to stereo: http://forum.doom9.org/archive/index.php/t-152034.html
 				args=({"remix","-m","1v0.3254,3v0.2301,5v0.2818,6v0.1627","2v0.3254,3v0.2301,5v-0.1627,6v-0.2818","delay",".1",".1"});
+				//Alternatively, take just channels 5 and 6 and use those. This can, in some cases,
+				//yield a music-heavy track.
+				args=({"remix","5v2","6v2"});
 				break;
 			default:
 				werror("WARNING: Unknown channel count %d in sound track, results may be unideal\n",channels);
