@@ -15,7 +15,7 @@ constant tweaked_soundtrack=sprintf(modified_soundtrack,"bitratefixed"); //Conve
 constant left_soundtrack=sprintf(modified_soundtrack,"leftonly"); //With the right channel muted...
 constant right_soundtrack=sprintf(modified_soundtrack,"rightonly"); //or the left channel muted.
 constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
-constant trackidentifiers="trackids.srt"; //Surtitles file identifying each track as it comes up
+constant trackidentifiers="audiotracks.srt"; //Surtitles file identifying each track as it comes up
 
 //Emit output iff in verbose mode
 //Note that it'll still evaluate its args even in non-verbose mode, for consistency.
