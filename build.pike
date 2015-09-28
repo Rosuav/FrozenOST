@@ -16,6 +16,7 @@ constant left_soundtrack=sprintf(modified_soundtrack,"leftonly"); //With the rig
 constant right_soundtrack=sprintf(modified_soundtrack,"rightonly"); //or the left channel muted.
 constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
 constant trackidentifiers="audiotracks.srt"; //Surtitles file identifying each track as it comes up
+constant wordsandtracks="words_and_tracks.srt"; //Merge of the above with the wordsfile
 
 //Emit output iff in verbose mode
 //Note that it'll still evaluate its args even in non-verbose mode, for consistency.
@@ -106,6 +107,7 @@ int main(int argc,array(string) argv)
 	sscanf(trackdata,"%*s\nMovieSource: %s\n",string moviesource);
 	sscanf(trackdata,"%*s\nOST_MP3: %s\n",string ost_mp3);
 	sscanf(trackdata,"%*s\nOutputFile: %s\n",string outputfile);
+	sscanf(trackdata,"%*s\nWordsFile: %s\n",string wordsfile); //Optional - if absent, words-and-tracks won't be made.
 	if (!moviesource || !ost_mp3 || !outputfile) exit(1,"Must have MovieSource, OST_MP3, and OutputFile identifiers in tracks file\n");
 	array tracks=trackdata/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
@@ -386,6 +388,12 @@ int main(int argc,array(string) argv)
 		int id=sizeof(inputs)/2; //Count the inputs prior to adding this one in - map identifiers are zero-based.
 		map+=({"-map",id+":a:0","-metadata:s:a:"+(id-1),"title="+(trackdesc[t]||"Soundtrack: "+t)});
 		inputs+=({"-i",soundtrack});
+	}
+	if (wordsfile && file_stat(wordsfile) && file_stat("../shed/srtzip.pike"))
+	{
+		//Merge the words file with the track IDs file - requires my shed repo for srtzip.pike
+		object srtzip=(object)"../shed/srtzip.pike";
+		srtzip->main(1,({"srtzip.pike","--clobber","--index","--reposition",wordsfile,trackidentifiers,wordsandtracks}));
 	}
 	rm(outputfile);
 	exec(({"avconv"})+inputs+map+times+({"-c:v","copy",outputfile}));
