@@ -31,7 +31,8 @@ by a space, and preferably then a human-readable name.
 OST_MP3: ../Downloads/Various.Artists-Frozen.OST-2013.320kbps-FF
 
 Optional surtitles file with words, which will be combined with the track IDs
-file to make a convenient display of what's going on.
+file to make a convenient display of what's going on. This uses the file from
+my LetItTrans repo, if available.
 WordsFile: ../LetItTrans/entire/English - Frozen.srt
 
 Final target - the video from MovieSource, combined soundtracks, and possibly
