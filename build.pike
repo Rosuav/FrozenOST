@@ -393,7 +393,7 @@ int main(int argc,array(string) argv)
 	{
 		//Merge the words file with the track IDs file - requires my shed repo for srtzip.pike
 		object srtzip=(object)"../shed/srtzip.pike";
-		srtzip->main(1,({"srtzip.pike","--clobber","--index","--reposition",wordsfile,trackidentifiers,wordsandtracks}));
+		srtzip->main(7,({"srtzip.pike","--clobber","--index","--reposition",wordsfile,trackidentifiers,wordsandtracks}));
 	}
 	rm(outputfile);
 	exec(({"avconv"})+inputs+map+times+({"-c:v","copy",outputfile}));
