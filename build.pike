@@ -389,12 +389,12 @@ int main(int argc,array(string) argv)
 		map+=({"-map",id+":a:0","-metadata:s:a:"+(id-1),"title="+(trackdesc[t]||"Soundtrack: "+t)});
 		inputs+=({"-i",soundtrack});
 	}
-	if (wordsfile && file_stat(wordsfile) && file_stat("../shed/srtzip.pike"))
+	if (wordsfile && file_stat(wordsfile) && file_stat("../shed/srtzip.pike")) catch
 	{
 		//Merge the words file with the track IDs file - requires my shed repo for srtzip.pike
 		object srtzip=(object)"../shed/srtzip.pike";
 		srtzip->main(7,({"srtzip.pike","--clobber","--index","--reposition",wordsfile,trackidentifiers,wordsandtracks}));
-	}
+	};
 	rm(outputfile);
 	exec(({"avconv"})+inputs+map+times+({"-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
