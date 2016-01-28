@@ -28,7 +28,7 @@ MovieSource: /video/Disney/Frozen 2013 720p HDRIP x264 AC3 TiTAN.mkv
 
 Directory of MP3 files - each one should start with a numeric prefix followed
 by a space, and preferably then a human-readable name.
-OST_MP3: ../Downloads/Various.Artists-Frozen.OST-2013.320kbps-FF
+OST_MP3: ../Music/FrozenOST
 
 Optional surtitles file with words, which will be combined with the track IDs
 file to make a convenient display of what's going on. This uses the file from
