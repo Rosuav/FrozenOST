@@ -277,8 +277,9 @@ int main(int argc,array(string) argv)
 				if (parts[0]=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
 				else
 				{
-					fn=glob(parts[0]+"*.mp3",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
-					infn=prefix+fn[3..<3]+"wav";
+					fn=glob(parts[0]+" *",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
+					sscanf(fn,"%*s %s.",string basename);
+					infn=prefix+" "+basename+".wav";
 					fn=ost_mp3+"/"+fn;
 				}
 				write("Creating %s from MP3\n",infn);
