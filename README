@@ -4,3 +4,8 @@ Most of the grunt-work is defined by build.pike, based on track definitions in
 tracks. It will create a whole bunch of intermediate .wav files in the current
 directory, which can be deleted at any time; they are, obviously, gitignored.
 
+For the most part, this produces a music-only audio track. Use the "Best
+Listening" options (select audio tracks using a player such as VLC that shows
+the track names) for this; there are some songs which are not available in
+music-only form, and a few pieces of dialogue which still come through, but
+you'll pretty much get an hour and a half of "Frozen" music, sans words.
