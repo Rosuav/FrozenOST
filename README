@@ -1,4 +1,4 @@
-Process of building up an OST-only version of Frozen :)
+Process of building up a soundtrack-only version of Frozen :)
 
 Most of the grunt-work is defined by build.pike, based on track definitions in
 tracks. It will create a whole bunch of intermediate .wav files in the current
