@@ -26,9 +26,11 @@ Must already exist; it'll be copied local for speed (and to allow *.mkv to be
 deleted safely). This directory can be mounted from a remote system.
 MovieSource: /video/Disney/Frozen 2013 720p HDRIP x264 AC3 TiTAN.mkv
 
-Directory of MP3 files - each one should start with a numeric prefix followed
-by a space, and preferably then a human-readable name.
-OST_MP3: ../Music/FrozenOST
+Directory of source files - each one should contain a number (given by the %s
+marker) and fit the resulting pattern, and ideally have a human-readable name
+identified with a tilde.
+OST_dir: ../Music/FrozenOST
+OST_pat: # - ~.mp3
 
 Optional surtitles file with words, which will be combined with the track IDs
 file to make a convenient display of what's going on. This uses the file from

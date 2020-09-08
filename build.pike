@@ -29,7 +29,7 @@ void verbose(mixed ... args) { };
 void exec(array(string) cmd)
 {
 	int t=time();
-	//write("%{%s %}\n",Process.sh_quote(cmd[*]));
+	write("%{%s %}\n",Process.sh_quote(cmd[*]));
 	Process.create_process(cmd)->wait();
 	float tm=time(t);
 	if (tm>5.0) verbose("-- done in %.2fs\n",tm);
@@ -107,10 +107,13 @@ int main(int argc,array(string) argv)
 	if (sscanf(argv[0], "%*sbuild_%[A-Za-z].pike%s", string fn, string empty) && fn && empty == "") trackfile = fn;
 	string trackdata="\n"+Stdio.read_file(trackfile);
 	sscanf(trackdata,"%*s\nMovieSource: %s\n",string moviesource);
-	sscanf(trackdata,"%*s\nOST_MP3: %s\n",string ost_mp3);
+	sscanf(trackdata,"%*s\nOST_dir: %s\n",string ost_dir);
+	sscanf(trackdata,"%*s\nOST_pat: %s\n",string ost_pat);
 	sscanf(trackdata,"%*s\nOutputFile: %s\n",string outputfile);
 	sscanf(trackdata,"%*s\nWordsFile: %s\n",string wordsfile); //Optional - if absent, words-and-tracks won't be made.
-	if (!moviesource || !ost_mp3 || !outputfile) exit(1,"Must have MovieSource, OST_MP3, and OutputFile identifiers in tracks file\n");
+	if (!moviesource || !ost_dir || !ost_pat || !outputfile) exit(1,"Must have MovieSource, OST_dir, OST_pat, and OutputFile identifiers in tracks file\n");
+	string ost_glob = replace(ost_pat, (["#": "%s", "~": "*"]));
+	string ost_desc = replace(ost_pat, (["#": "%*s", "*": "%*s", "~": "%s"]));
 	array tracks=trackdata/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
@@ -126,13 +129,13 @@ int main(int argc,array(string) argv)
 		//There are a number of completely unused files, including outtakes, the words
 		//versions of tracks available instrumentally, and the credits song (which for
 		//some reason doesn't seem to fit, so there's a comments-only line in tracks).
-		array ostmp3dir=glob("*.mp3",get_dir(ost_mp3));
+		array ostfiles = glob(sprintf(ost_glob, "*"), get_dir(ost_dir));
 		mapping(string:array) partialusage=([]);
 		foreach (tracks,string t)
 		{
 			array parts=t/" ";
 			if (parts[0]=="999") continue; //Ignore shine-through segments
-			ostmp3dir-=glob(parts[0]+"*.mp3",ostmp3dir);
+			ostfiles -= glob(sprintf(ost_glob, parts[0]), ostfiles);
 			string partial_start,partial_len;
 			if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0])
 			{
@@ -144,7 +147,7 @@ int main(int argc,array(string) argv)
 			if (!partialusage[parts[0]]) partialusage[parts[0]]=({ });
 			partialusage[parts[0]]+=({({(float)partial_start, partial_len && (float)partial_len})}); //Note that len will be the integer 0 if there's no length.
 		}
-		write("Unused files:\n%{%3.3s: all\n%}",sort(ostmp3dir));
+		write("Unused files:\n%{%3.3s: all\n%}", sort(ostfiles));
 		foreach (sort(indices(partialusage)),string track)
 		{
 			float doneto=0.0;
@@ -209,6 +212,11 @@ int main(int argc,array(string) argv)
 				//yield a music-heavy track.
 				args=({"remix","5v2","6v2"});
 				break;
+			case 8:
+				msg=" and downmixing 7.1->stereo";
+				//Per above, using the rear channels. Should be music-heavy.
+				args=({"remix","7v2","8v2"});
+				break;
 			default:
 				werror("WARNING: Unknown channel count %d in sound track, results may be unideal\n",channels);
 				msg=" and cutting channels";
@@ -221,7 +229,7 @@ int main(int argc,array(string) argv)
 	//Figure out the changes between the two versions
 	//Note that this copes poorly with insertions/deletions/moves, and will
 	//see a large number of changed tracks, and simply recreate them all.
-	array(string) dir=get_dir(),ostmp3dir=get_dir(ost_mp3);
+	array(string) dir = get_dir(), ostfiles = get_dir(ost_dir);
 	int changed;
 	array(array(string)) tracklist=allocate(sizeof(trackdefs),({ }));
 	//Positions are in milliseconds
@@ -279,10 +287,10 @@ int main(int argc,array(string) argv)
 				if (parts[0]=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
 				else
 				{
-					fn=glob(parts[0]+" *",ostmp3dir)[0]; //If it doesn't exist, bomb with a tidy exception.
-					sscanf(fn,"%*s %s.",string basename);
+					fn = glob(sprintf(ost_glob, parts[0]), ostfiles)[0]; //If it doesn't exist, bomb with a tidy exception.
+					sscanf(fn, ost_desc, string basename);
 					infn=prefix+" "+basename+".wav";
-					fn=ost_mp3+"/"+fn;
+					fn = ost_dir + "/" + fn;
 				}
 				write("Creating %s from MP3\n",infn);
 				array(string) args=({"ffmpeg","-i",fn});
@@ -332,7 +340,8 @@ int main(int argc,array(string) argv)
 			else verbose("%s: overlap %s -> %s\n",outfn,mstime(lastpos-startpos),mstime(overlap+=lastpos-startpos));
 			lastpos=endpos;
 			string desc=parts[0];
-			array(string) mp3=glob(parts[0]+"*.mp3",ostmp3dir); if (sizeof(mp3)) sscanf(mp3[0],"%*s - %s.mp3",desc);
+			array(string) files = glob(sprintf(ost_glob, parts[0]), ostfiles);
+			if (sizeof(files)) sscanf(files[0], ost_desc, desc);
 			if (parts[0]=="999") desc="Shine-through";
 			srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n%02d: %s\n\n",++srtcnt,srttime(startpos),srttime(endpos),i,desc);
 		}
