@@ -135,7 +135,7 @@ int main(int argc,array(string) argv)
 		foreach (tracks,string t)
 		{
 			array parts=t/" ";
-			if (parts[0]=="999") continue; //Ignore shine-through segments
+			if (parts[0] == "999" || parts[0] == "99") continue; //Ignore shine-through segments
 			ostfiles -= glob(sprintf(ost_glob, parts[0]), ostfiles);
 			string partial_start,partial_len;
 			if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0])
@@ -244,6 +244,7 @@ int main(int argc,array(string) argv)
 		array parts=tracks[i]/" "; if (sizeof(parts)==1) parts+=({""});
 		if (parts[1]=="::") {verbose("%s: placing at %s\n",outfn,parts[1]=mstime(lastpos)); tracks[i]=parts*" ";} //Explicit abuttal - patch in the actual time, for the use of prevtracks
 		string prefix=parts[0],start=parts[1];
+		if (parts[0] == "99") parts[0] = "999";
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
 		startpos*=1000; if (has_value(start,'.')) startpos+=(int)((start/".")[-1]+"000")[..2]; //Patch in subsecond resolution by padding to exactly three digits
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
@@ -380,7 +381,7 @@ int main(int argc,array(string) argv)
 					exec(({"sox","-S",tweaked_soundtrack,left_soundtrack,"remix","-","0"}));
 				}
 				parts=({sprintf(combined_soundtrack,t+"!"),left_soundtrack});
-				moreargs+=({"remix","0","-v.5"});
+				moreargs+=({"remix","0","-v.6"});
 			}
 			if (has_value(t,'r'))
 			{
@@ -390,7 +391,7 @@ int main(int argc,array(string) argv)
 					exec(({"sox","-S",tweaked_soundtrack,right_soundtrack,"remix","0","-"}));
 				}
 				parts=({sprintf(combined_soundtrack,t+"!"),right_soundtrack});
-				moreargs+=({"remix","-v.5","0"});
+				moreargs+=({"remix","-v.6","0"});
 			}
 			//SoX refuses to mix one track, even if it's doing other effects. So remove the -m switch when there's only one track.
 			array(string) mixornot=({"-m"})*(sizeof(tracklist[i])>1);
