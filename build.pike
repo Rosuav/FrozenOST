@@ -1,6 +1,6 @@
 #!/usr/local/bin/pike
 /*
-To build the full Frozen OST, you will need avconv, sox, and of course Pike. The other files are all listed in the track list.
+To build the full Frozen OST, you will need FFMPEG, sox, and of course Pike. The other files are all listed in the track list.
 Note that the trackid subtitles file is used by the FlemishFrozen project, so a basic build of this project is needed before that works.
 
 A full build will chug and chug and CHUG as it builds quite a few separate pieces. Currently there's no -j option to
@@ -182,7 +182,7 @@ int main(int argc,array(string) argv)
 		else
 		{
 			write("Creating %s from %s\n",movie,moviesource);
-			exec(({"avconv","-i",moviesource,movie}));
+			exec(({"ffmpeg","-i",moviesource,movie}));
 		}
 	}
 	if (!file_stat(tweaked_soundtrack))
@@ -190,7 +190,7 @@ int main(int argc,array(string) argv)
 		if (!file_stat(orig_soundtrack))
 		{
 			write("Rebuilding %s (ripping from %s)\n",orig_soundtrack,movie);
-			exec(({"avconv","-i",movie,orig_soundtrack}));
+			exec(({"ffmpeg","-i",movie,orig_soundtrack}));
 		}
 		sscanf(Process.run(({"sox","--i",orig_soundtrack}))->stdout,"%*sChannels%*s: %d",int channels);
 		string msg; array args;
@@ -285,7 +285,7 @@ int main(int argc,array(string) argv)
 					fn=ost_mp3+"/"+fn;
 				}
 				write("Creating %s from MP3\n",infn);
-				array(string) args=({"avconv","-i",fn});
+				array(string) args=({"ffmpeg","-i",fn});
 				if (partial_start) args+=({"-ss",partial_start});
 				if (partial_len) args+=({"-t",partial_len});
 				exec(args+({infn}));
@@ -399,7 +399,7 @@ int main(int argc,array(string) argv)
 		srtzip->main(7,({"srtzip.pike","--clobber","--index","--reposition",wordsfile,trackidentifiers,wordsandtracks}));
 	};
 	rm(outputfile);
-	exec(({"avconv"})+inputs+map+times+({"-c:v","copy",outputfile}));
+	exec(({"ffmpeg"})+inputs+map+times+({"-c:v","copy",outputfile}));
 	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
 }
