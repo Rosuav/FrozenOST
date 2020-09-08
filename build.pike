@@ -68,7 +68,8 @@ constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
 	"lr": ({"rm", "m", "c"}), //L/R sync
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
-	"sync": ({"9s", "ws9"}), "isync": ({"s9"}), "wsync": ({"ws9"}), //Include sync track
+	"sync": ({"s9", "ws9"}), "isync": ({"s9"}), "wsync": ({"ws9"}), //Include sync track
+	"lr": ({"rm", "wrm"}), "ilr": ({"rm"}), "wlr": ({"wrm"}), //Left/Right sync
 	"full": ({ }), //Everything we can think of! Provided elsewhere as neither sort() nor Array.array_sort() can be used in a constant definition.
 ]);
 
@@ -379,7 +380,7 @@ int main(int argc,array(string) argv)
 					exec(({"sox","-S",tweaked_soundtrack,left_soundtrack,"remix","-","0"}));
 				}
 				parts=({sprintf(combined_soundtrack,t+"!"),left_soundtrack});
-				moreargs+=({"remix","0","-v.05"});
+				moreargs+=({"remix","0","-v.5"});
 			}
 			if (has_value(t,'r'))
 			{
@@ -389,7 +390,7 @@ int main(int argc,array(string) argv)
 					exec(({"sox","-S",tweaked_soundtrack,right_soundtrack,"remix","0","-"}));
 				}
 				parts=({sprintf(combined_soundtrack,t+"!"),right_soundtrack});
-				moreargs+=({"remix","-v.05","0"});
+				moreargs+=({"remix","-v.5","0"});
 			}
 			//SoX refuses to mix one track, even if it's doing other effects. So remove the -m switch when there's only one track.
 			array(string) mixornot=({"-m"})*(sizeof(tracklist[i])>1);
