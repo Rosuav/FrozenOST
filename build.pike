@@ -103,7 +103,9 @@ int main(int argc,array(string) argv)
 		ignorefrom*=1000; ignoreto*=1000; //TODO: Actually use subsecond resolution
 	}
 	if (argc>1 && argv[1]!="" && (modes[argv[1]] || trackdesc[argv[1]])) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
-	string trackdata="\n"+Stdio.read_file("tracks");
+	string trackfile = "tracks";
+	if (sscanf(argv[0], "%*sbuild_%[A-Za-z].pike%s", string fn, string empty) && fn && empty == "") trackfile = fn;
+	string trackdata="\n"+Stdio.read_file(trackfile);
 	sscanf(trackdata,"%*s\nMovieSource: %s\n",string moviesource);
 	sscanf(trackdata,"%*s\nOST_MP3: %s\n",string ost_mp3);
 	sscanf(trackdata,"%*s\nOutputFile: %s\n",string outputfile);
