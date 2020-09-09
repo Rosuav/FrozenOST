@@ -381,7 +381,7 @@ int main(int argc,array(string) argv)
 					exec(({"sox","-S",tweaked_soundtrack,left_soundtrack,"remix","-","0"}));
 				}
 				parts=({sprintf(combined_soundtrack,t+"!"),left_soundtrack});
-				moreargs+=({"remix","0","-v.6"});
+				moreargs+=({"remix","0","-v.5"});
 			}
 			if (has_value(t,'r'))
 			{
@@ -391,7 +391,7 @@ int main(int argc,array(string) argv)
 					exec(({"sox","-S",tweaked_soundtrack,right_soundtrack,"remix","0","-"}));
 				}
 				parts=({sprintf(combined_soundtrack,t+"!"),right_soundtrack});
-				moreargs+=({"remix","-v.6","0"});
+				moreargs+=({"remix","-v.5","0"});
 			}
 			//SoX refuses to mix one track, even if it's doing other effects. So remove the -m switch when there's only one track.
 			array(string) mixornot=({"-m"})*(sizeof(tracklist[i])>1);
