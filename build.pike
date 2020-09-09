@@ -217,6 +217,8 @@ int main(int argc,array(string) argv)
 				msg=" and downmixing 7.1->stereo";
 				//Per above, using the rear channels. Should be music-heavy.
 				args=({"remix","7v2","8v2"});
+				//Or try the front channels for a word sync
+				//args=({"remix","1v2","2v2"});
 				break;
 			default:
 				werror("WARNING: Unknown channel count %d in sound track, results may be unideal\n",channels);

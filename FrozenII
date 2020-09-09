@@ -13,10 +13,10 @@ OutputFile: Frozen II plus OST.mkv
 99 0:04:59 [L60]
 17 0:05:59.75 [Instrumental]
 01 0:05:59.75 [Words]
-18 0:09:10 [Instrumental,T.999] needs tempo adjustment, too fast
+18 0:09:10 [Instrumental,T.999]
 02 0:09:10 [Words,T.999]
-19 0:16:50.8 [Instrumental] too fast
-03 0:16:50.8 [Words]
+19 0:16:50.8 [Instrumental,T.999] too fast
+03 0:16:50.8 [Words,T.999]
 20 0:29:37.25 [Instrumental] too fast maybe
 04 0:29:37.25 [Words]
 21 0:48:58 [Instrumental] shorter than the words version
