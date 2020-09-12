@@ -31,16 +31,33 @@ OutputFile: Frozen II plus OST.mkv
 20 0:29:37.3 [Instrumental,T.999]
 04 0:29:37.3 [Words,T.999]
 33 0:31:26
+99 0:34:14 [L::] includes Olaf's story - the music starts with Olaf's "when I'm older" theme
+-- Olaf's story itself is mostly not on the rear speakers so shinethrough is lost
+35 0:37:13
+34 0:40:51.5 yes these two are in the other order in the OST
+36 0:45:30
+99 0:47:41 [L19]
+99 0:48:18 [L::] actually continues under the words version
 21 0:48:58 [Instrumental] shorter than the words version
 05 0:48:46 [Words]
 22 :: [Instrumental] NAILED IT
 06 :: [Words]
-23 1:02:53.8 [Instrumental] too fast
-07 1:02:53.8 [Words]
-24 1:13:56.2 [Instrumental]
-08 1:13:56.2 [Words]
-25 1:31:17.75 [Instrumental] End credits
-09 1:31:17.75 [Words]
+37 0:52:33
+38 ::
+39 1:00:04 Bring it on, Elsa!
+23 1:02:53.8 [Instrumental,T.999]
+07 1:02:53.8 [Words,T.999] ends at 1:07:09ish
+40 1:07:06
+41 1:10:04 Maybe needs the start trimmed off??
+24 1:13:56.2 [Instrumental,T.999]
+08 1:13:56.2 [Words,T.999]
+42 1:17:25
+43 1:19:27
+44 1:22:46
+45 1:24:09
+46 1:27:56
+25 1:31:17.7 [Instrumental] End credits
+09 1:31:17.7 [Words]
 26 1:34:24 [Instrumental]
 10 1:34:24 [Words]
 27 1:37:23 [Instrumental]
