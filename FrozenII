@@ -14,50 +14,50 @@ OutputFile: Frozen II plus OST.mkv
 17 0:05:59.75 [Instrumental]
 01 0:05:59.75 [Words]
 99 0:08:06 [L60] ends with Some Things Never Change theme
-18 0:09:10 [Instrumental,T.999]
-02 0:09:10 [Words,T.999]
+18 0:09:09.9 [Instrumental,T.999]
+02 0:09:09.9 [Words,T.999]
 99 0:12:41 [L15]
 99 0:13:08 [L8]
-99 0:13:30 [L121]
-30 0:15:25 [L35] where does the rest of it go
+99 0:13:30 [L93]
+30 0:15:26 [L35] where does the rest of it go
 99 0:16:22 [L18]
 19 0:16:50.8 [Instrumental,T.999]
 03 0:16:50.8 [Words,T.999]
 31 0:20:05.5
 99 0:21:45 [L210] Pabbie, trivia, stuff
-32 0:25:22
+32 0:25:20.5
 99 0:28:10.5 [L26.5]
 99 0:28:53 [L::]
-20 0:29:37.3 [Instrumental,T.999]
-04 0:29:37.3 [Words,T.999]
-33 0:31:26
+20 0:29:37.35 [Instrumental,T.999]
+04 0:29:37.35 [Words,T.999]
+33 0:31:26.75
 99 0:34:14 [L::] includes Olaf's story - the music starts with Olaf's "when I'm older" theme
 -- Olaf's story itself is mostly not on the rear speakers so shinethrough is lost
-35 0:37:13
-34 0:40:51.5 yes these two are in the other order in the OST
-36 0:45:30
+35 0:37:13.75
+34 0:40:52 yes these two are in the other order in the OST
+36 0:45:30 mostly right but there's something in the middle that isn't
 99 0:47:41 [L19]
 99 0:48:18 [L::] actually continues under the words version
 21 0:48:58 [Instrumental] shorter than the words version
-05 0:48:46 [Words]
-22 :: [Instrumental] NAILED IT
-06 :: [Words]
-37 0:52:33
-38 ::
-39 1:00:04 Bring it on, Elsa!
+05 0:48:46 [Words] do these need to be T.999 and then a teensy bit later?
+22 :: [Instrumental,T.999]
+06 :: [Words,T.999]
+37 0:52:33.25
+38 0:57:28.25
+39 1:00:04.25 Bring it on, Elsa! (May need to be cut up a little - it's about a second or two too soon at the end)
 23 1:02:53.8 [Instrumental,T.999]
 07 1:02:53.8 [Words,T.999] ends at 1:07:09ish
-40 1:07:06
-41 1:10:04 Maybe needs the start trimmed off??
-24 1:13:56.2 [Instrumental,T.999]
-08 1:13:56.2 [Words,T.999]
-42 1:17:25
-43 1:19:27
-44 1:22:46
-45 1:24:09
-46 1:27:56
-25 1:31:17.7 [Instrumental] End credits
-09 1:31:17.7 [Words]
+40 1:07:06.25
+41 1:10:03 Maybe needs the start trimmed off??
+24 1:13:56.3 [Instrumental,T.999]
+08 1:13:56.3 [Words,T.999]
+42 1:17:24.5
+43 1:19:27.25
+44 1:22:45.95
+45 1:24:09.1
+46 1:27:56.15
+25 1:31:17.75 [Instrumental] End credits
+09 1:31:17.75 [Words]
 26 1:34:24 [Instrumental]
 10 1:34:24 [Words]
 27 1:37:23 [Instrumental]
