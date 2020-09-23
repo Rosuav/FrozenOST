@@ -9,8 +9,7 @@ parallelize, but several of the steps are capable of using multiple CPU cores in
 
 //Intermediate file names
 constant movie="Original movie.mkv"; //Copied local from moviesource
-constant orig_soundtrack="MovieSoundTrack.wav"; //Direct rip from movie above
-constant modified_soundtrack="MovieSoundTrack_%s.wav"; //orig_soundtrack with some modification, keyword in the %s
+constant modified_soundtrack="MovieSoundTrack_%s.wav"; //Movie soundtrack with some modification, keyword in the %s
 constant tweaked_soundtrack=sprintf(modified_soundtrack,"bitratefixed"); //Converted down to 2 channels and 44KHz
 constant left_soundtrack=sprintf(modified_soundtrack,"leftonly"); //With the right channel muted...
 constant right_soundtrack=sprintf(modified_soundtrack,"rightonly"); //or the left channel muted.
@@ -191,43 +190,38 @@ int main(int argc,array(string) argv)
 	}
 	if (!file_stat(tweaked_soundtrack))
 	{
-		if (!file_stat(orig_soundtrack))
+		mapping metadata = Standards.JSON.decode(Process.run(({"ffprobe",
+			"-print_format", "json", "-show_streams",
+			"-select_streams", "a", //Show audio streams only, so we don't have to filter them
+			"-v", "quiet",
+			movie}))->stdout);
+		if (!mappingp(metadata) || !arrayp(metadata->streams)) exit(1, "Bad output format from ffprobe, cannot continue\n");
+		if (!sizeof(metadata->streams)) exit(1, "No audio tracks in %s\n", movie);
+		write("Rebuilding %s (downmixing and fixing bitrate from %s)\n", tweaked_soundtrack, movie);
+		exec(({"ffmpeg", "-y", "-i", movie, "-ac", "2", "-ar", "44100", tweaked_soundtrack}));
+		//TODO: Have files for "rear" and "side", which are aliased to each other if only one, or
+		//aliased to tweaked if neither is available. Then allow shinethrough to choose.
+		//Should I just let ffmpeg figure it out and always ask for both BL/BR and SL/SR?
+		switch (metadata->streams[0]->channel_layout)
 		{
-			write("Rebuilding %s (ripping from %s)\n",orig_soundtrack,movie);
-			exec(({"ffmpeg","-i",movie,orig_soundtrack}));
-		}
-		sscanf(Process.run(({"sox","--i",orig_soundtrack}))->stdout,"%*sChannels%*s: %d",int channels);
-		string msg; array args;
-		//TODO: Figure out the actual channel pattern - currently makes assumptions based on channel count
-		switch (channels)
-		{
-			case 2: msg=""; args=({ }); break; //2 channels - assume stereo
-			case 6:
-				msg=" and downmixing 5.1->stereo";
-				//NOTE: It seems there's a sync error with this. Have no idea why. Is this
-				//an issue only with Frozen, or is it a script bug, or a 5:1->stereo issue,
-				//or what? For now, hard-coding in a short delay to resync them.
-				//Downmix from 5.1 to stereo: http://forum.doom9.org/archive/index.php/t-152034.html
-				args=({"remix","-m","1v0.3254,3v0.2301,5v0.2818,6v0.1627","2v0.3254,3v0.2301,5v-0.1627,6v-0.2818","delay",".1",".1"});
-				//Alternatively, take just channels 5 and 6 and use those. This can, in some cases,
-				//yield a music-heavy track.
-				args=({"remix","5v2","6v2"});
+			case "stereo": break; //The default is fine
+			case "5.1":
+				write("Rebuilding %s (selecting rear channels from %s)\n", tweaked_soundtrack, movie);
+				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=BL|c1=BR", "-ar", "44100", tweaked_soundtrack}));
 				break;
-			case 8:
-				msg=" and downmixing 7.1->stereo";
-				//Per above, using the rear channels. Should be music-heavy.
-				args=({"remix","7v2","8v2"});
-				//Or try the front channels for a word sync
-				//args=({"remix","1v2","2v2"});
+			case "5.1(side)":
+				write("Rebuilding %s (selecting side channels from %s)\n", tweaked_soundtrack, movie);
+				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=SL|c1=SR", "-ar", "44100", tweaked_soundtrack}));
+				break;
+			case "7.1":
+				//TODO: Also take the rear??
+				write("Rebuilding %s (selecting side channels from %s)\n", tweaked_soundtrack, movie);
+				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=SL|c1=SR", "-ar", "44100", tweaked_soundtrack}));
 				break;
 			default:
-				werror("WARNING: Unknown channel count %d in sound track, results may be unideal\n",channels);
-				msg=" and cutting channels";
-				args=({"-c","2"});
+				werror("WARNING: Unknown channel layout %s, using default downmix only\n", metadata->streams[0]->channel_layout);
 				break;
 		}
-		write("Rebuilding %s (fixing bitrate%s from %s)\n",tweaked_soundtrack,msg,orig_soundtrack);
-		exec(({"sox","-S",orig_soundtrack,"-r","44100",tweaked_soundtrack})+args);
 	}
 	//Figure out the changes between the two versions
 	//Note that this copes poorly with insertions/deletions/moves, and will
