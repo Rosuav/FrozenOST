@@ -5,6 +5,7 @@ OST_dir: ../Videos/FrozenII/OST
 OST_pat: #-*-~.mp3
 WordsFile: ../Videos/FrozenII/Subs/English.srt
 OutputFile: Frozen II plus OST.mkv
+ShinethroughVolume: 33dB
 
 28 0:00:02.25 [L16.5,F0/0/1] may need Mess/NoMess treatment
 28 0:00:16.75 [S14.25,F1]

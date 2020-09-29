@@ -111,6 +111,7 @@ int main(int argc,array(string) argv)
 	sscanf(trackdata,"%*s\nOST_pat: %s\n",string ost_pat);
 	sscanf(trackdata,"%*s\nOutputFile: %s\n",string outputfile);
 	sscanf(trackdata,"%*s\nWordsFile: %s\n",string wordsfile); //Optional - if absent, words-and-tracks won't be made.
+	sscanf(trackdata,"%*s\nShinethroughVolume: %s\n", string shinethroughvol); //Optional - if absent, shinethrough volume isn't changed
 	if (!moviesource || !ost_dir || !ost_pat || !outputfile) exit(1,"Must have MovieSource, OST_dir, OST_pat, and OutputFile identifiers in tracks file\n");
 	string ost_glob = replace(ost_pat, (["#": "%s", "~": "*"]));
 	string ost_desc = replace(ost_pat, (["#": "%*s", "*": "%*s", "~": "%s"]));
@@ -198,7 +199,8 @@ int main(int argc,array(string) argv)
 		if (!mappingp(metadata) || !arrayp(metadata->streams)) exit(1, "Bad output format from ffprobe, cannot continue\n");
 		if (!sizeof(metadata->streams)) exit(1, "No audio tracks in %s\n", movie);
 		write("Rebuilding %s (downmixing and fixing bitrate from %s)\n", tweaked_soundtrack, movie);
-		exec(({"ffmpeg", "-y", "-i", movie, "-ac", "2", "-ar", "44100", tweaked_soundtrack}));
+		string vol = shinethroughvol ? ", volume=" + shinethroughvol : "";
+		exec(({"ffmpeg", "-y", "-i", movie, "-af", "null" + vol, "-ac", "2", "-ar", "44100", tweaked_soundtrack}));
 		//TODO: Have files for "rear" and "side", which are aliased to each other if only one, or
 		//aliased to tweaked if neither is available. Then allow shinethrough to choose.
 		//Should I just let ffmpeg figure it out and always ask for both BL/BR and SL/SR?
@@ -207,16 +209,16 @@ int main(int argc,array(string) argv)
 			case "stereo": break; //The default is fine
 			case "5.1":
 				write("Rebuilding %s (selecting rear channels from %s)\n", tweaked_soundtrack, movie);
-				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=BL|c1=BR", "-ar", "44100", tweaked_soundtrack}));
+				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=BL|c1=BR" + vol, "-ar", "44100", tweaked_soundtrack}));
 				break;
 			case "5.1(side)":
 				write("Rebuilding %s (selecting side channels from %s)\n", tweaked_soundtrack, movie);
-				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=SL|c1=SR", "-ar", "44100", tweaked_soundtrack}));
+				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=SL|c1=SR" + vol, "-ar", "44100", tweaked_soundtrack}));
 				break;
 			case "7.1":
 				//TODO: Also take the rear??
 				write("Rebuilding %s (selecting side channels from %s)\n", tweaked_soundtrack, movie);
-				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=SL|c1=SR", "-ar", "44100", tweaked_soundtrack}));
+				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=SL|c1=SR" + vol, "-ar", "44100", tweaked_soundtrack}));
 				break;
 			default:
 				werror("WARNING: Unknown channel layout %s, using default downmix only\n", metadata->streams[0]->channel_layout);
