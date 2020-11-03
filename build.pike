@@ -65,6 +65,7 @@ constant trackdesc=([
 ]);
 constant modes=([
 	"": ({"9", "w9", "c"}), //Default build
+	"9c": ({"9", "c"}), "wc": ({"w9", "c"}), //Build only one of the two main tracks
 	"lr": ({"rm", "m", "c"}), //L/R sync
 	"mini": ({"9", "w9"}), "imini": ({"9"}), "wmini": ({"w9"}), //Quicker build, much quicker if you take only one track
 	"sync": ({"s9", "ws9"}), "isync": ({"s9"}), "wsync": ({"ws9"}), //Include sync track
