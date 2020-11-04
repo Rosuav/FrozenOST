@@ -11,6 +11,7 @@ parallelize, but several of the steps are capable of using multiple CPU cores in
 constant movie="Original movie.mkv"; //Copied local from moviesource
 constant modified_soundtrack="MovieSoundTrack_%s.wav"; //Movie soundtrack with some modification, keyword in the %s
 constant tweaked_soundtrack=sprintf(modified_soundtrack,"bitratefixed"); //Converted down to 2 channels and 44KHz
+constant alternate_soundtrack=sprintf(modified_soundtrack,"altchannel"); //A different channel pair
 constant left_soundtrack=sprintf(modified_soundtrack,"leftonly"); //With the right channel muted...
 constant right_soundtrack=sprintf(modified_soundtrack,"rightonly"); //or the left channel muted.
 constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
@@ -201,13 +202,11 @@ int main(int argc,array(string) argv)
 		if (!sizeof(metadata->streams)) exit(1, "No audio tracks in %s\n", movie);
 		write("Rebuilding %s (downmixing and fixing bitrate from %s)\n", tweaked_soundtrack, movie);
 		string vol = shinethroughvol ? ", volume=" + shinethroughvol : "";
-		exec(({"ffmpeg", "-y", "-i", movie, "-af", "null" + vol, "-ac", "2", "-ar", "44100", tweaked_soundtrack}));
-		//TODO: Have files for "rear" and "side", which are aliased to each other if only one, or
-		//aliased to tweaked if neither is available. Then allow shinethrough to choose.
-		//Should I just let ffmpeg figure it out and always ask for both BL/BR and SL/SR?
+		//The default soundtrack file will be the side channels if available, else the rear.
+		//If both are available, alternate_soundtrack will exist too.
+		//TODO: Should I just let ffmpeg figure it out and always ask for both BL/BR and SL/SR?
 		switch (metadata->streams[0]->channel_layout)
 		{
-			case "stereo": break; //The default is fine
 			case "5.1":
 				write("Rebuilding %s (selecting rear channels from %s)\n", tweaked_soundtrack, movie);
 				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=BL|c1=BR" + vol, "-ar", "44100", tweaked_soundtrack}));
@@ -217,12 +216,15 @@ int main(int argc,array(string) argv)
 				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=SL|c1=SR" + vol, "-ar", "44100", tweaked_soundtrack}));
 				break;
 			case "7.1":
-				//TODO: Also take the rear??
 				write("Rebuilding %s (selecting side channels from %s)\n", tweaked_soundtrack, movie);
 				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=SL|c1=SR" + vol, "-ar", "44100", tweaked_soundtrack}));
+				write("Rebuilding %s (selecting rear channels from %s)\n", alternate_soundtrack, movie);
+				exec(({"ffmpeg", "-y", "-i", movie, "-af", "pan=stereo|c0=BL|c1=BR" + vol, "-ar", "44100", alternate_soundtrack}));
 				break;
 			default:
 				werror("WARNING: Unknown channel layout %s, using default downmix only\n", metadata->streams[0]->channel_layout);
+			case "stereo": //Default downmix is all we can get for stereo. (No warning needed.)
+				exec(({"ffmpeg", "-y", "-i", movie, "-af", "null" + vol, "-ac", "2", "-ar", "44100", tweaked_soundtrack}));
 				break;
 		}
 	}
@@ -244,11 +246,12 @@ int main(int argc,array(string) argv)
 		if (parts[1]=="::") {verbose("%s: placing at %s\n",outfn,parts[1]=mstime(lastpos)); tracks[i]=parts*" ";} //Explicit abuttal - patch in the actual time, for the use of prevtracks
 		string prefix=parts[0],start=parts[1];
 		if (parts[0] == "99") parts[0] = "999";
+		if (parts[0] == "98") parts[0] = "998";
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
 		startpos*=1000; if (has_value(start,'.')) startpos+=(int)((start/".")[-1]+"000")[..2]; //Patch in subsecond resolution by padding to exactly three digits
 		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		string partial_start,partial_len,temposhift,fade;
-		if (parts[0]=="999") {partial_start=parts[1]; prefix+="S"+startpos;}
+		if (parts[0] == "999" || parts[0] == "998") {partial_start=parts[1]; prefix+="S"+startpos;}
 		int wordsmode=0,nonwordsmode=0;
 		int messmode=0,nonmessmode=0;
 		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
@@ -286,6 +289,7 @@ int main(int argc,array(string) argv)
 			{
 				string fn;
 				if (parts[0]=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
+				else if (parts[0]=="998") {fn=alternate_soundtrack; infn=prefix+" movie alt sound track.wav";}
 				else
 				{
 					fn = glob(sprintf(ost_glob, parts[0]), ostfiles)[0]; //If it doesn't exist, bomb with a tidy exception.
@@ -344,6 +348,7 @@ int main(int argc,array(string) argv)
 			array(string) files = glob(sprintf(ost_glob, parts[0]), ostfiles);
 			if (sizeof(files)) sscanf(files[0], ost_desc, desc);
 			if (parts[0]=="999") desc="Shine-through";
+			if (parts[0]=="998") desc="Shine-through (alt)";
 			srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n%02d: %s\n\n",++srtcnt,srttime(startpos),srttime(endpos),i,desc);
 		}
 		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
