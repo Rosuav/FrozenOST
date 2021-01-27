@@ -372,7 +372,7 @@ int main(int argc,array(string) argv)
 	}
 	write("Total gap: %s\nTotal abutting tracks: %d\nTotal overlap: %s\nFinal position: %s\nNote that these figures may apply to only the beginning of the movie.\n",mstime(gap),abuttals,mstime(overlap),mstime(lastpos));
 	if (changed) rm(sprintf("%s%s", intermediatedir, glob(sprintf(combined_soundtrack,"*"),get_dir(intermediatedir))[*])[*]);
-	array(string) inputs=({"-i",intermediatedir + movie}),map=({"-map","0:v"});
+	array(string) inputs = ({"-i", movie}), map = ({"-map","0:v"});
 	foreach (trackdefs;int i;string t)
 	{
 		if (t=="c") {map+=({"-map","0:a:0","-c:a:"+(sizeof(inputs)/2-1),"copy"}); continue;} //Easy. No input, just another thing to map in.
