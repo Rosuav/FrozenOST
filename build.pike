@@ -7,17 +7,6 @@ A full build will chug and chug and CHUG as it builds quite a few separate piece
 parallelize, but several of the steps are capable of using multiple CPU cores intrinsically.
 */
 
-//Intermediate file names
-constant movie="Original movie.mkv"; //Copied local from moviesource
-constant modified_soundtrack="MovieSoundTrack_%s.wav"; //Movie soundtrack with some modification, keyword in the %s
-constant tweaked_soundtrack=sprintf(modified_soundtrack,"bitratefixed"); //Converted down to 2 channels and 44KHz
-constant alternate_soundtrack=sprintf(modified_soundtrack,"altchannel"); //A different channel pair
-constant left_soundtrack=sprintf(modified_soundtrack,"leftonly"); //With the right channel muted...
-constant right_soundtrack=sprintf(modified_soundtrack,"rightonly"); //or the left channel muted.
-constant combined_soundtrack="soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
-constant trackidentifiers="audiotracks.srt"; //Surtitles file identifying each track as it comes up
-constant wordsandtracks="words_and_tracks.srt"; //Merge of the above with the wordsfile
-
 //Emit output iff in verbose mode
 //Note that it'll still evaluate its args even in non-verbose mode, for consistency.
 #ifdef VERBOSE
@@ -112,11 +101,28 @@ int main(int argc,array(string) argv)
 	sscanf(trackdata,"%*s\nOST_dir: %s\n",string ost_dir);
 	sscanf(trackdata,"%*s\nOST_pat: %s\n",string ost_pat);
 	sscanf(trackdata,"%*s\nOutputFile: %s\n",string outputfile);
+	sscanf(trackdata,"%*s\nIntermediateDir: %s\n",string intermediatedir);
 	sscanf(trackdata,"%*s\nWordsFile: %s\n",string wordsfile); //Optional - if absent, words-and-tracks won't be made.
 	sscanf(trackdata,"%*s\nShinethroughVolume: %s\n", string shinethroughvol); //Optional - if absent, shinethrough volume isn't changed
 	if (!moviesource || !ost_dir || !ost_pat || !outputfile) exit(1,"Must have MovieSource, OST_dir, OST_pat, and OutputFile identifiers in tracks file\n");
 	string ost_glob = replace(ost_pat, (["#": "%s", "~": "*"]));
 	string ost_desc = replace(ost_pat, (["#": "%*s", "*": "%*s", "~": "%s"]));
+	if (!intermediatedir || intermediatedir == "") intermediatedir = "./";
+	else if (!has_suffix(intermediatedir, "/")) intermediatedir += "/";
+	Stdio.mkdirhier(intermediatedir);
+
+	//Intermediate file names. Will be created inside the IntermediateDir directory ("." if unspecified).
+	string movie = intermediatedir + "Original movie.mkv"; //Copied local from moviesource
+	string modified_soundtrack = intermediatedir + "MovieSoundTrack_%s.wav"; //Movie soundtrack with some modification, keyword in the %s
+	string tweaked_soundtrack = sprintf(modified_soundtrack, "bitratefixed"); //Converted down to 2 channels and 44KHz
+	string alternate_soundtrack = sprintf(modified_soundtrack, "altchannel"); //A different channel pair
+	string left_soundtrack = sprintf(modified_soundtrack, "leftonly"); //With the right channel muted...
+	string right_soundtrack = sprintf(modified_soundtrack, "rightonly"); //or the left channel muted.
+	string combined_soundtrack = intermediatedir + "soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
+	//Automatically-created output files (in the current directory). TODO: Let these be specified by the config file.
+	constant trackidentifiers = "audiotracks.srt"; //Surtitles file identifying each track as it comes up
+	constant wordsandtracks = "words_and_tracks.srt"; //Merge of the above with the wordsfile
+
 	array tracks=trackdata/"\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
@@ -173,7 +179,7 @@ int main(int argc,array(string) argv)
 	}
 	if (mode=="full") trackdefs=sort(indices(trackdesc)) + ({"c"}); //Can't be done in the constant as sort() mutates its argument.
 	array prevtracks;
-	catch {prevtracks=decode_value(Stdio.read_file("prevtracks"));};
+	catch {prevtracks=decode_value(Stdio.read_file(intermediatedir + "prevtracks"));};
 	if (!prevtracks) prevtracks=({ });
 	int tottracks=max(sizeof(tracks),sizeof(prevtracks));
 	if (sizeof(tracks)<tottracks) tracks+=({""})*(tottracks-sizeof(tracks));
@@ -205,6 +211,9 @@ int main(int argc,array(string) argv)
 		//The default soundtrack file will be the side channels if available, else the rear.
 		//If both are available, alternate_soundtrack will exist too.
 		//TODO: Should I just let ffmpeg figure it out and always ask for both BL/BR and SL/SR?
+		//Or should the tracks file specify channel selection?
+		//Other alternatives to consider: "[0:1]channelsplit=channel_layout=7.1:channels=BL|BR[lf][rf];[lf][rf]amerge=inputs=2[aout]"
+		//or "channelsplit=channel_layout=7.1:channels=BL|BR[lf][rf];[lf][rf]amerge=inputs=2[aout]"
 		switch (metadata->streams[0]->channel_layout)
 		{
 			case "5.1":
@@ -231,7 +240,7 @@ int main(int argc,array(string) argv)
 	//Figure out the changes between the two versions
 	//Note that this copes poorly with insertions/deletions/moves, and will
 	//see a large number of changed tracks, and simply recreate them all.
-	array(string) dir = get_dir(), ostfiles = get_dir(ost_dir);
+	array(string) dir = get_dir(intermediatedir), ostfiles = get_dir(ost_dir);
 	int changed;
 	array(array(string)) tracklist=allocate(sizeof(trackdefs),({ }));
 	//Positions are in milliseconds
@@ -249,7 +258,7 @@ int main(int argc,array(string) argv)
 		if (parts[0] == "98") parts[0] = "998";
 		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
 		startpos*=1000; if (has_value(start,'.')) startpos+=(int)((start/".")[-1]+"000")[..2]; //Patch in subsecond resolution by padding to exactly three digits
-		if (tracks[i]=="") {rm(outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
+		if (tracks[i]=="") {rm(intermediatedir + outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
 		string partial_start,partial_len,temposhift,fade;
 		if (parts[0] == "999" || parts[0] == "998") {partial_start=parts[1]; prefix+="S"+startpos;}
 		int wordsmode=0,nonwordsmode=0;
@@ -281,7 +290,7 @@ int main(int argc,array(string) argv)
 		}
 		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
 		{
-			rm(outfn);
+			rm(intermediatedir + outfn);
 
 			//Find and maybe create the .wav version of the input file we want
 			array(string) in=glob(prefix+" *.wav",dir); string infn;
@@ -301,14 +310,14 @@ int main(int argc,array(string) argv)
 				array(string) args=({"ffmpeg","-i",fn});
 				if (partial_start) args+=({"-ss",partial_start});
 				if (partial_len) args+=({"-t",partial_len});
-				exec(args+({infn}));
-				dir=get_dir(); if (!has_value(dir,infn)) exit(1,"Was not able to create %s - exiting\n",infn);
+				exec(args+({intermediatedir + infn}));
+				dir=get_dir(intermediatedir); if (!has_value(dir,infn)) exit(1,"Was not able to create %s - exiting\n",infn);
 			}
 			else infn=in[0];
 
 			write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
 			//eg: sox 111* 01.wav delay 0:00:05 0:00:05
-			array(string) args=({"sox",infn,outfn});
+			array(string) args=({"sox", intermediatedir + infn, intermediatedir + outfn});
 			if (temposhift)
 			{
 				//When the tempo shift is very close to 1.0, the -l parameter
@@ -330,7 +339,7 @@ int main(int argc,array(string) argv)
 			changed=1;
 		}
 		//TODO: Use `sox --i -D outfn` for better precision
-		sscanf(Process.run(({"sox","--i",outfn}))->stdout,"%*sDuration       : %d:%d:%d.%s ",int hr,int min,int sec,string ms);
+		sscanf(Process.run(({"sox","--i",intermediatedir + outfn}))->stdout,"%*sDuration       : %d:%d:%d.%s ",int hr,int min,int sec,string ms);
 		int endpos=hr*3600000+min*60000+sec*1000+(int)(ms+"000")[..2];
 		if (!nonwordsmode && !nonmessmode) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
 		{
@@ -358,12 +367,12 @@ int main(int argc,array(string) argv)
 			if (has_value(t,'w') ? nonwordsmode : wordsmode) continue;
 			if (has_value(t,'m') ? nonmessmode : messmode) continue;
 			if (!has_value(t,'9') && parts[0]=="999") continue;
-			tracklist[i]+=({outfn});
+			tracklist[i]+=({intermediatedir + outfn});
 		}
 	}
 	write("Total gap: %s\nTotal abutting tracks: %d\nTotal overlap: %s\nFinal position: %s\nNote that these figures may apply to only the beginning of the movie.\n",mstime(gap),abuttals,mstime(overlap),mstime(lastpos));
-	if (changed) rm(glob(sprintf(combined_soundtrack,"*"),get_dir())[*]);
-	array(string) inputs=({"-i",movie}),map=({"-map","0:v"});
+	if (changed) rm(sprintf("%s%s", intermediatedir, glob(sprintf(combined_soundtrack,"*"),get_dir(intermediatedir))[*])[*]);
+	array(string) inputs=({"-i",intermediatedir + movie}),map=({"-map","0:v"});
 	foreach (trackdefs;int i;string t)
 	{
 		if (t=="c") {map+=({"-map","0:a:0","-c:a:"+(sizeof(inputs)/2-1),"copy"}); continue;} //Easy. No input, just another thing to map in.
@@ -415,6 +424,6 @@ int main(int argc,array(string) argv)
 	};
 	rm(outputfile);
 	exec(({"ffmpeg"})+inputs+map+times+({"-c:v","copy",outputfile}));
-	Stdio.write_file("prevtracks",encode_value(tracks-({""})));
+	Stdio.write_file(intermediatedir + "prevtracks",encode_value(tracks-({""})));
 	write("Total time: %.2fs\n",time(start));
 }
