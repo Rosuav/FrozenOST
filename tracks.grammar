@@ -1,0 +1,33 @@
+trackfile: entities;
+trackfile: sep entities {take2}; /* Leading/trailing comments on the track file get ignored */
+trackfile: entities sep;
+trackfile: sep entities sep {take2};
+entities: entity {collection};
+entities: entities sep entity {gather};
+
+/* Collapse consecutive comments and/or newlines */
+sep: "EOL";
+sep: sep "EOL";
+
+/* Directives, usually at the top of the file */
+entity: directive;
+directive: "atom" ":" "value" {setvar};
+
+/* Track descriptions */
+entity: track;
+track: "#digits" " " time {maketrack};
+track: "#digits" " " time " " "[" args "]" {maketrack};
+args: arg {collection};
+args: args "," arg {gather};
+arg: "atom" {collection};
+arg: "atom" times {collection};
+times: time {collection};
+times: times "/" time {gather};
+time: ":" ":" {time_abut};
+time: hms;
+hms: seconds;
+hms: "#digits" ":" seconds {time_minsec};
+hms: "#digits" ":" "#digits" ":" seconds {time_hms};
+seconds: "#digits" {seconds};
+seconds: "." "#digits" {milliseconds};
+seconds: "#digits" "." "#digits" {sec_milli};

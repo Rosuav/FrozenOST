@@ -79,6 +79,68 @@ string mstime(int tm)
 void onelineoutput(string data) {write(replace(data,"\n","\r"));}
 mapping oneline=(["stderr":onelineoutput]);
 
+//Parser for track file
+string trackdata;
+string|array low_next() {
+	//Lexer for trackdata: basic tokens
+	if (trackdata == "") return "";
+	if (sscanf(trackdata, "%*[ ];%*[^\n]%s", trackdata)) /*return ({"comment", 0})*/; //Comments get suppressed entirely (we'll fall through and return EOL)
+	if (sscanf(trackdata, "%[\n]%s", string nl, trackdata) && nl != "") return ({"EOL", nl});
+	if (sscanf(trackdata, "%[0-9]%s", string digits, trackdata) && digits != "") return ({"#digits", digits});
+	if (sscanf(trackdata, "%[A-Z_a-z]%s", string alpha, trackdata) && alpha != "") return ({"atom", alpha});
+	if (sscanf(trackdata, "%[ \t]%s", string ws, trackdata) && ws != "") return " "; //Treat all non-EOL whitespace as a single space
+	sscanf(trackdata, "%1s%s", string char, trackdata); return char;
+}
+array magicseq = ({"EOL", "atom", ':'});
+int magicidx = 1; //Can skip the EOL at start of stream
+string|array next() {
+	//Magic token sequence that leads to an untokenized bare string
+	//It's kinda like entering a cheat code.
+	if (magicidx == sizeof(magicseq) && sscanf(trackdata, "%[^\n;]%s", string value, trackdata)) {
+		magicidx = 0;
+		return ({"value", String.trim(value)});
+	}
+	string|array ret = low_next();
+	if (ret == "") return "";
+	if (ret[0] == magicseq[magicidx]) ++magicidx;
+	else magicidx = ret[0] == magicseq[0];
+	return ret;
+}
+//For lexer debugging, switch from using next to using shownext
+string|array shownext() {mixed ret = next(); write("Got next [%d]:%{ %O%} ==> %O\n", magicidx, Array.arrayify(ret), trackdata[..5]); return ret;}
+
+//Parser handlers
+//Config variables, can be set with directives. If set to 0 here, must be
+//defined in the file, otherwise this will be the default. If not named,
+//the variable cannot be set.
+mapping vars = ([
+	"MovieSource": 0,
+	"OST_dir": 0,
+	"OST_pat": 0,
+	"OutputFile": 0,
+	"IntermediateDir": "./",
+	"WordsFile": "", //Optional - if absent, words-and-tracks won't be made.
+	"ShinethroughVolume": "", //Optional - if absent, shinethrough volume isn't changed
+]);
+array tracks = ({ });
+void setvar(string var, string colon, string val) {
+	if (!has_index(vars, var)) error("Unknown variable %O\n", var);
+	vars[var] = val;
+}
+mixed maketrack(string tracknum, string _1, int starttime, string|void _2, string|void _3, array|void args, string|void _4) {
+	return ({(int)tracknum, starttime}) + args; //Yes, it's fine to add 0 onto there if args is void
+}
+array collection(mixed ... thing) {return thing;} //Gather all its args into a collection
+array gather(array prev, string sep, mixed thing) {return prev + ({thing}) - ({0});} //Recursively gather more
+//Data type handling
+int seconds(string digits) {return 1000 * (int)digits;}
+int milliseconds(string digits) {return (int)((digits + "000")[..2]);}
+int sec_milli(string s, string _, string m) {return seconds(s) + milliseconds(m);}
+constant ABUT = 1<<30; int time_abut() {return ABUT;} //Sentinel to mean "up to the next" or "from where the prev ended"
+int time_minsec(string m, string _, int time) {return time + 60000 * (int)m;}
+int time_hms(string h, string _1, string m, string _2, int time) {return time + 60000 * (int)m + 3600000 * (int)h;}
+mixed take2(mixed _, mixed ret) {return ret;}
+
 int main(int argc,array(string) argv)
 {
 	if (argc>1 && argv[1]=="san") exit(0,"San-check passed\n"); //Does it even compile? Very quick check, doesn't read or write any files.
@@ -96,15 +158,24 @@ int main(int argc,array(string) argv)
 	if (argc>1 && argv[1]!="" && (modes[argv[1]] || trackdesc[argv[1]])) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
 	string trackfile = "tracks";
 	if (sscanf(argv[0], "%*sbuild_%[A-Za-z].pike%s", string fn, string empty) && fn && empty == "") trackfile = fn;
-	string trackdata="\n"+Stdio.read_file(trackfile);
+	trackdata = Stdio.read_file(trackfile) + "\n"; //Ensure newline at end of file
+	/*
+	Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("tracks.grammar");
+	mixed trackinfo = parser->parse(next, this);
+	array missing = ({ }); foreach (vars; string name; string val) if (!val) missing += ({name});
+	if (sizeof(missing)) exit(1, "Must have " + String.implode_nicely(missing) + " directives in tracks file\n");
+	write("%O\n", trackinfo);
+	exit(0, "Hack passed\n");
+	*/
+	//From here on, we aren't using the parser yet (which means we've temporarily lost some validation that's been moved)
+	trackdata = "\n" + trackdata;
 	sscanf(trackdata,"%*s\nMovieSource: %s\n",string moviesource);
 	sscanf(trackdata,"%*s\nOST_dir: %s\n",string ost_dir);
 	sscanf(trackdata,"%*s\nOST_pat: %s\n",string ost_pat);
 	sscanf(trackdata,"%*s\nOutputFile: %s\n",string outputfile);
 	sscanf(trackdata,"%*s\nIntermediateDir: %s\n",string intermediatedir);
-	sscanf(trackdata,"%*s\nWordsFile: %s\n",string wordsfile); //Optional - if absent, words-and-tracks won't be made.
-	sscanf(trackdata,"%*s\nShinethroughVolume: %s\n", string shinethroughvol); //Optional - if absent, shinethrough volume isn't changed
-	if (!moviesource || !ost_dir || !ost_pat || !outputfile) exit(1,"Must have MovieSource, OST_dir, OST_pat, and OutputFile identifiers in tracks file\n");
+	sscanf(trackdata,"%*s\nWordsFile: %s\n",string wordsfile); 
+	sscanf(trackdata,"%*s\nShinethroughVolume: %s\n", string shinethroughvol); 
 	string ost_glob = replace(ost_pat, (["#": "%s", "~": "*"]));
 	string ost_desc = replace(ost_pat, (["#": "%*s", "*": "%*s", "~": "%s"]));
 	if (!intermediatedir || intermediatedir == "") intermediatedir = "./";
