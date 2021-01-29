@@ -400,9 +400,9 @@ int main(int argc,array(string) argv)
 			exec(args+({"delay",start,start}));
 			changed=1;
 		}
-		//TODO: Use `sox --i -D outfn` for better precision
-		sscanf(Process.run(({"sox","--i",intermediatedir + outfn}))->stdout,"%*sDuration       : %d:%d:%d.%s ",int hr,int min,int sec,string ms);
-		int endpos=hr*3600000+min*60000+sec*1000+(int)(ms+"000")[..2];
+		//Query the file's duration to get its effective end position
+		sscanf(Process.run(({"sox", "--i", "-D", intermediatedir + outfn}))->stdout, "%d.%s", int sec, string ms);
+		int endpos = sec*1000 + (int)(ms+"000")[..2];
 		if (!nonwordsmode && !nonmessmode) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
 		{
 			if (startpos>lastpos)
