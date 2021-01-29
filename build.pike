@@ -127,8 +127,8 @@ void setvar(string var, string colon, string val) {
 	if (!has_index(vars, var)) error("Unknown variable %O\n", var);
 	vars[var] = val;
 }
-mixed maketrack(string tracknum, string _1, int starttime, string|void _2, string|void _3, array|void args, string|void _4) {
-	return ({(int)tracknum, starttime}) + args; //Yes, it's fine to add 0 onto there if args is void
+mixed maketrack(string tracknum, string _1, int starttime, string|void _2, string|void _3, mapping|void args, string|void _4) {
+	return ({tracknum, starttime, args || ([])});
 }
 array collection(mixed ... thing) {return thing;} //Gather all its args into a collection
 array gather(array prev, string sep, mixed thing) {return prev + ({thing});} //Recursively gather more
@@ -140,6 +140,8 @@ constant ABUT = 1<<30; int time_abut() {return ABUT;} //Sentinel to mean "up to 
 int time_minsec(string m, string _, int time) {return time + 60000 * (int)m;}
 int time_hms(string h, string _1, string m, string _2, int time) {return time + 60000 * (int)m + 3600000 * (int)h;}
 mixed take2(mixed _, mixed ret) {return ret;}
+mapping tag(string atom, mixed|void val) {return ([atom[..0]: undefinedp(val) ? 1 : val]);}
+mapping tags(mapping t1, string _, mapping t2) {return t1 | t2;}
 
 int main(int argc,array(string) argv)
 {
