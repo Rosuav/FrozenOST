@@ -131,7 +131,7 @@ mixed maketrack(string tracknum, string _1, int starttime, string|void _2, strin
 	return ({(int)tracknum, starttime}) + args; //Yes, it's fine to add 0 onto there if args is void
 }
 array collection(mixed ... thing) {return thing;} //Gather all its args into a collection
-array gather(array prev, string sep, mixed thing) {return prev + ({thing}) - ({0});} //Recursively gather more
+array gather(array prev, string sep, mixed thing) {return prev + ({thing});} //Recursively gather more
 //Data type handling
 int seconds(string digits) {return 1000 * (int)digits;}
 int milliseconds(string digits) {return (int)((digits + "000")[..2]);}
@@ -158,27 +158,15 @@ int main(int argc,array(string) argv)
 	if (argc>1 && argv[1]!="" && (modes[argv[1]] || trackdesc[argv[1]])) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
 	string trackfile = "tracks";
 	if (sscanf(argv[0], "%*sbuild_%[A-Za-z].pike%s", string fn, string empty) && fn && empty == "") trackfile = fn;
-	trackdata = Stdio.read_file(trackfile) + "\n"; //Ensure newline at end of file
-	/*
+	trackdata = Stdio.read_file(trackfile);
 	Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("tracks.grammar");
-	mixed trackinfo = parser->parse(next, this);
+	array tracks = parser->parse(next, this) - ({0});
 	array missing = ({ }); foreach (vars; string name; string val) if (!val) missing += ({name});
 	if (sizeof(missing)) exit(1, "Must have " + String.implode_nicely(missing) + " directives in tracks file\n");
-	write("%O\n", trackinfo);
-	exit(0, "Hack passed\n");
-	*/
-	//From here on, we aren't using the parser yet (which means we've temporarily lost some validation that's been moved)
-	trackdata = "\n" + trackdata;
-	sscanf(trackdata,"%*s\nMovieSource: %s\n",string moviesource);
-	sscanf(trackdata,"%*s\nOST_dir: %s\n",string ost_dir);
-	sscanf(trackdata,"%*s\nOST_pat: %s\n",string ost_pat);
-	sscanf(trackdata,"%*s\nOutputFile: %s\n",string outputfile);
-	sscanf(trackdata,"%*s\nIntermediateDir: %s\n",string intermediatedir);
-	sscanf(trackdata,"%*s\nWordsFile: %s\n",string wordsfile); 
-	sscanf(trackdata,"%*s\nShinethroughVolume: %s\n", string shinethroughvol); 
-	string ost_glob = replace(ost_pat, (["#": "%s", "~": "*"]));
-	string ost_desc = replace(ost_pat, (["#": "%*s", "*": "%*s", "~": "%s"]));
-	if (!intermediatedir || intermediatedir == "") intermediatedir = "./";
+	string ost_glob = replace(vars->OST_pat, (["#": "%s", "~": "*"]));
+	string ost_desc = replace(vars->OST_pat, (["#": "%*s", "*": "%*s", "~": "%s"]));
+	string intermediatedir = vars->IntermediateDir;
+	if (intermediatedir == "") intermediatedir = "./";
 	else if (!has_suffix(intermediatedir, "/")) intermediatedir += "/";
 	Stdio.mkdirhier(intermediatedir);
 
@@ -192,11 +180,14 @@ int main(int argc,array(string) argv)
 	string combined_soundtrack = intermediatedir + "soundtrack_%s.wav"; //All the individual track files (gets the mode string inserted)
 	//Automatically-created output files (in the current directory). TODO: Let these be specified by the config file.
 	constant trackidentifiers = "audiotracks.srt"; //Surtitles file identifying each track as it comes up
-	constant wordsandtracks = "words_and_tracks.srt"; //Merge of the above with the wordsfile
+	constant wordsandtracks = "words_and_tracks.srt"; //Merge of the above with the WordsFile
 
-	array tracks=trackdata/"\n"; //Lines of text
+	//From here on, we aren't using the parser yet (which means we're duplicating a lot of work)
+	//write("%O\n--------------\n", tracks);
+	tracks = Stdio.read_file(trackfile) / "\n"; //Lines of text
 	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
+	//write("%O\n--------------\n", tracks);
 	if (mode=="trackusage")
 	{
 		//Special: Instead of actually building anything, just run through the tracks
@@ -209,7 +200,7 @@ int main(int argc,array(string) argv)
 		//There are a number of completely unused files, including outtakes, the words
 		//versions of tracks available instrumentally, and the credits song (which for
 		//some reason doesn't seem to fit, so there's a comments-only line in tracks).
-		array ostfiles = glob(sprintf(ost_glob, "*"), get_dir(ost_dir));
+		array ostfiles = glob(sprintf(ost_glob, "*"), get_dir(vars->OST_dir));
 		mapping(string:array) partialusage=([]);
 		foreach (tracks,string t)
 		{
@@ -257,15 +248,15 @@ int main(int argc,array(string) argv)
 	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
 	if (!file_stat(movie))
 	{
-		if (has_suffix(moviesource,".mkv"))
+		if (has_suffix(vars->MovieSource, ".mkv"))
 		{
-			write("Copying %s from %s\n",movie,moviesource);
-			Stdio.cp(moviesource,movie);
+			write("Copying %s from %s\n", movie, vars->MovieSource);
+			Stdio.cp(vars->MovieSource, movie);
 		}
 		else
 		{
-			write("Creating %s from %s\n",movie,moviesource);
-			exec(({"ffmpeg","-i",moviesource,movie}));
+			write("Creating %s from %s\n", movie, vars->MovieSource);
+			exec(({"ffmpeg", "-i", vars->MovieSource, movie}));
 		}
 	}
 	if (!file_stat(tweaked_soundtrack))
@@ -278,7 +269,7 @@ int main(int argc,array(string) argv)
 		if (!mappingp(metadata) || !arrayp(metadata->streams)) exit(1, "Bad output format from ffprobe, cannot continue\n");
 		if (!sizeof(metadata->streams)) exit(1, "No audio tracks in %s\n", movie);
 		write("Rebuilding %s (downmixing and fixing bitrate from %s)\n", tweaked_soundtrack, movie);
-		string vol = shinethroughvol ? ", volume=" + shinethroughvol : "";
+		string vol = vars->ShinethroughVolume != "" ? ", volume=" + vars->ShinethroughVolume : "";
 		//The default soundtrack file will be the side channels if available, else the rear.
 		//If both are available, alternate_soundtrack will exist too.
 		//TODO: Should I just let ffmpeg figure it out and always ask for both BL/BR and SL/SR?
@@ -311,7 +302,7 @@ int main(int argc,array(string) argv)
 	//Figure out the changes between the two versions
 	//Note that this copes poorly with insertions/deletions/moves, and will
 	//see a large number of changed tracks, and simply recreate them all.
-	array(string) dir = get_dir(intermediatedir), ostfiles = get_dir(ost_dir);
+	array(string) dir = get_dir(intermediatedir), ostfiles = get_dir(vars->OST_dir);
 	int changed;
 	array(array(string)) tracklist=allocate(sizeof(trackdefs),({ }));
 	//Positions are in milliseconds
@@ -375,7 +366,7 @@ int main(int argc,array(string) argv)
 					fn = glob(sprintf(ost_glob, parts[0]), ostfiles)[0]; //If it doesn't exist, bomb with a tidy exception.
 					sscanf(fn, ost_desc, string basename);
 					infn=prefix+" "+basename+".wav";
-					fn = ost_dir + "/" + fn;
+					fn = vars->OST_dir + "/" + fn;
 				}
 				write("Creating %s from MP3\n",infn);
 				array(string) args=({"ffmpeg","-i",fn});
@@ -487,14 +478,15 @@ int main(int argc,array(string) argv)
 		map+=({"-map",id+":a:0","-metadata:s:a:"+(id-1),"title="+(trackdesc[t]||"Soundtrack: "+t)});
 		inputs+=({"-i",soundtrack});
 	}
-	if (wordsfile && file_stat(wordsfile) && file_stat("../shed/srtzip.pike")) catch
+	if (vars->WordsFile && file_stat(vars->WordsFile) && file_stat("../shed/srtzip.pike")) catch
 	{
 		//Merge the words file with the track IDs file - requires my shed repo for srtzip.pike
-		object srtzip=(object)"../shed/srtzip.pike";
-		srtzip->main(7,({"srtzip.pike","--clobber","--index","--reposition",wordsfile,trackidentifiers,wordsandtracks}));
+		object srtzip = (object)"../shed/srtzip.pike";
+		srtzip->main(7, ({"srtzip.pike", "--clobber", "--index", "--reposition",
+			vars->WordsFile, trackidentifiers, wordsandtracks}));
 	};
-	rm(outputfile);
-	exec(({"ffmpeg"})+inputs+map+times+({"-c:v","copy",outputfile}));
-	Stdio.write_file(intermediatedir + "prevtracks",encode_value(tracks-({""})));
-	write("Total time: %.2fs\n",time(start));
+	rm(vars->OutputFile);
+	exec(({"ffmpeg"}) + inputs + map + times + ({"-c:v", "copy", vars->OutputFile}));
+	Stdio.write_file(intermediatedir + "prevtracks", encode_value(tracks - ({""})));
+	write("Total time: %.2fs\n", time(start));
 }
