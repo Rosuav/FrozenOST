@@ -204,7 +204,7 @@ int main(int argc,array(string) argv)
 			ostfiles -= glob(sprintf(ost_glob, prefix), ostfiles);
 			int partial_start, partial_len;
 			if (!tags->S && !tags->L) continue; //Easy
-			partialusage[prefix] += ({({tags->S && tags->S[0], tags->L ? tags->L[0] : -1})});
+			partialusage[prefix] += ({({tags->S && tags->S[0], tags->L && tags->L[0]})});
 		}
 		write("Unused files:\n%{%3.3s: all\n%}", sort(ostfiles));
 		foreach (sort(indices(partialusage)), string track)
@@ -213,10 +213,10 @@ int main(int argc,array(string) argv)
 			array(string) gaps = ({ });
 			foreach (sort(partialusage[track]), [int start, int len])
 			{
-				if (start - doneto > 1.0) gaps += ({sprintf("%f-%f", doneto/1000.0, start/1000.0)}); //Ignore gaps of up to a second, which are usually just skipping over the silence between sections
+				if (start - doneto > 1000) gaps += ({sprintf("%s-%s", mstime(doneto), mstime(start))}); //Ignore gaps of up to a second, which are usually just skipping over the silence between sections
 				if (len) doneto = start + len; else doneto = -1; //There shouldn't be anything following a length-less entry
 			}
-			if (doneto != -1) gaps += ({sprintf("%f->end", doneto/1000.0)});
+			if (doneto != -1) gaps += ({sprintf("%s->end", mstime(doneto))});
 			if (sizeof(gaps)) write("%s: %s\n", track, gaps*", ");
 		}
 		return 0;
