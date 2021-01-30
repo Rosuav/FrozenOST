@@ -289,12 +289,39 @@ int main(int argc,array(string) argv)
 	array prevtracks;
 	catch {prevtracks = Standards.JSON.decode(Stdio.read_file(intermediatedir + "prevtracks"));};
 	if (!arrayp(prevtracks)) prevtracks = ({ });
-	int tottracks=max(sizeof(tracks),sizeof(prevtracks));
-	if (sizeof(tracks)<tottracks) tracks+=({""})*(tottracks-sizeof(tracks));
-	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
-	//Figure out the changes between the two versions
-	//Note that this copes poorly with insertions/deletions/moves, and will
-	//see a large number of changed tracks, and simply recreate them all.
+	int trackdelta = sizeof(tracks) - sizeof(prevtracks); //Positive means some have been added, negative deleted
+	if (trackdelta) {
+		//Attempt to intelligently pair up old and new tracklists in the event
+		//that there's been a single insertion or deletion somewhere in the
+		//middle of the array. If there have been multiple blocks inserted, or
+		//insertions in one place and deletions in another, or anything else
+		//more complicated, this diff won't catch it, and the naive handling
+		//below will end up deleting and recreating a bunch of tracks that
+		//could have been just mv'd to their new positions - wasted work but
+		//the result is definitely going to be correct.
+		int rear;
+		for (rear = 1; rear <= sizeof(tracks) && rear <= sizeof(prevtracks); ++rear) {
+			//Note that equal() handles arrays the way we want it to,
+			//but `==() would check identity.
+			if (!equal(tracks[-rear], prevtracks[-rear])) break;
+			mv(sprintf("%s%02d.wav", intermediatedir, sizeof(prevtracks) - rear),
+				sprintf("%s%02d.wav", intermediatedir, sizeof(tracks) - rear));
+		}
+		if (trackdelta > 0) {
+			//Insert shims to denote the places where new tracks get made
+			prevtracks = prevtracks[..<rear-1] + ({""}) * trackdelta + prevtracks[<rear-2..];
+		}
+		else {
+			//If multiple tracks were removed near (or at) the end, we might
+			//have left some behind. Shouldn't be a problem; they'll just
+			//linger in the cache until something needs to dispose of them.
+			//Remove the nuked tracks (the files have already been mv'd)
+			prevtracks = prevtracks[..<rear-1-trackdelta] + prevtracks[<rear-2..];
+		}
+		//We've moved cache files around, so be sure to save the prevtracks, in case
+		//the build gets halted part way. Cache desynchronization is a PAIN.
+		Stdio.write_file(intermediatedir + "prevtracks", Standards.JSON.encode(tracks - ({""}), 7));
+	}
 	array(string) dir = get_dir(intermediatedir), ostfiles = get_dir(vars->OST_dir);
 	int changed;
 	array(array(string)) tracklist=allocate(sizeof(trackdefs),({ }));
@@ -303,7 +330,7 @@ int main(int argc,array(string) argv)
 	int overlap=0,gap=0; int abuttals;
 	Stdio.File srt=Stdio.File(trackidentifiers,"wct");
 	int srtcnt=0;
-	for (int i=0;i<tottracks;++i)
+	for (int i=0;i<sizeof(tracks);++i)
 	{
 		string outfn=sprintf("%02d.wav",i);
 		array parts=tracks[i]/" "; if (sizeof(parts)==1) parts+=({""});
@@ -478,8 +505,8 @@ int main(int argc,array(string) argv)
 		srtzip->main(7, ({"srtzip.pike", "--clobber", "--index", "--reposition",
 			vars->WordsFile, trackidentifiers, wordsandtracks}));
 	};
-	rm(vars->OutputFile);
-	exec(({"ffmpeg"}) + inputs + map + times + ({"-c:v", "copy", vars->OutputFile}));
+	//rm(vars->OutputFile);
+	//exec(({"ffmpeg"}) + inputs + map + times + ({"-c:v", "copy", vars->OutputFile}));
 	Stdio.write_file(intermediatedir + "prevtracks", Standards.JSON.encode(tracks - ({""}), 7));
 	write("Total time: %.2fs\n", time(start));
 }
