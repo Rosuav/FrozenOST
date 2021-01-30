@@ -304,12 +304,13 @@ int main(int argc,array(string) argv)
 			//Note that equal() handles arrays the way we want it to,
 			//but `==() would check identity.
 			if (!equal(tracks[-rear], prevtracks[-rear])) break;
-			mv(sprintf("%s%02d.wav", intermediatedir, sizeof(prevtracks) - rear),
-				sprintf("%s%02d.wav", intermediatedir, sizeof(tracks) - rear));
 		}
 		if (trackdelta > 0) {
 			//Insert shims to denote the places where new tracks get made
 			prevtracks = prevtracks[..<rear-1] + ({""}) * trackdelta + prevtracks[<rear-2..];
+			for (int t = sizeof(tracks) - 1; t > sizeof(tracks) - rear; --t)
+				mv(sprintf("%s%02d.wav", intermediatedir, t - trackdelta),
+					sprintf("%s%02d.wav", intermediatedir, t));
 		}
 		else {
 			//If multiple tracks were removed near (or at) the end, we might
@@ -317,6 +318,9 @@ int main(int argc,array(string) argv)
 			//linger in the cache until something needs to dispose of them.
 			//Remove the nuked tracks (the files have already been mv'd)
 			prevtracks = prevtracks[..<rear-1-trackdelta] + prevtracks[<rear-2..];
+			for (int t = sizeof(tracks) - rear + 1; t < sizeof(tracks); ++t)
+				mv(sprintf("%s%02d.wav", intermediatedir, t - trackdelta),
+					sprintf("%s%02d.wav", intermediatedir, t));
 		}
 		//We've moved cache files around, so be sure to save the prevtracks, in case
 		//the build gets halted part way. Cache desynchronization is a PAIN.
