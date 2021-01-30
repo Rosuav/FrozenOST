@@ -202,7 +202,6 @@ int main(int argc,array(string) argv)
 		{
 			if (prefix == "999" || prefix == "99") continue; //Ignore shine-through segments
 			ostfiles -= glob(sprintf(ost_glob, prefix), ostfiles);
-			int partial_start, partial_len;
 			if (!tags->S && !tags->L) continue; //Easy
 			partialusage[prefix] += ({({tags->S && tags->S[0], tags->L && tags->L[0]})});
 		}
