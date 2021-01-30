@@ -287,8 +287,8 @@ int main(int argc,array(string) argv)
 	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
 	foreach (tracks; int i; string t) write("%-40s %s\n", t, Standards.JSON.encode(tt[i]));
 	array prevtracks;
-	catch {prevtracks=decode_value(Stdio.read_file(intermediatedir + "prevtracks"));};
-	if (!prevtracks) prevtracks=({ });
+	catch {prevtracks = Standards.JSON.decode(Stdio.read_file(intermediatedir + "prevtracks"));};
+	if (!arrayp(prevtracks)) prevtracks = ({ });
 	int tottracks=max(sizeof(tracks),sizeof(prevtracks));
 	if (sizeof(tracks)<tottracks) tracks+=({""})*(tottracks-sizeof(tracks));
 	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
@@ -480,6 +480,6 @@ int main(int argc,array(string) argv)
 	};
 	rm(vars->OutputFile);
 	exec(({"ffmpeg"}) + inputs + map + times + ({"-c:v", "copy", vars->OutputFile}));
-	Stdio.write_file(intermediatedir + "prevtracks", encode_value(tracks - ({""})));
+	Stdio.write_file(intermediatedir + "prevtracks", Standards.JSON.encode(tracks - ({""}), 7));
 	write("Total time: %.2fs\n", time(start));
 }
