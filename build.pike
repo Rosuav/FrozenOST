@@ -220,12 +220,6 @@ int main(int argc,array(string) argv)
 		}
 		return 0;
 	}
-	//From here on, we aren't using the parser yet (which means we're duplicating a lot of work)
-	array tt = tracks;
-	tracks = Stdio.read_file(trackfile) / "\n"; //Lines of text
-	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
-	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
-	foreach (tracks; int i; string t) write("%-40s %s\n", t, Standards.JSON.encode(tt[i]));
 	array(string) trackdefs=modes[mode];
 	if (!trackdefs)
 	{
@@ -233,12 +227,6 @@ int main(int argc,array(string) argv)
 		else exit(0,"Unrecognized mode %O\n",mode);
 	}
 	if (mode=="full") trackdefs=sort(indices(trackdesc)) + ({"c"}); //Can't be done in the constant as sort() mutates its argument.
-	array prevtracks;
-	catch {prevtracks=decode_value(Stdio.read_file(intermediatedir + "prevtracks"));};
-	if (!prevtracks) prevtracks=({ });
-	int tottracks=max(sizeof(tracks),sizeof(prevtracks));
-	if (sizeof(tracks)<tottracks) tracks+=({""})*(tottracks-sizeof(tracks));
-	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
 	if (!file_stat(movie))
 	{
 		if (has_suffix(vars->MovieSource, ".mkv"))
@@ -292,6 +280,18 @@ int main(int argc,array(string) argv)
 				break;
 		}
 	}
+	//From here on, we aren't using the parser yet (which means we're duplicating a lot of work)
+	array tt = tracks;
+	tracks = Stdio.read_file(trackfile) / "\n"; //Lines of text
+	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
+	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
+	foreach (tracks; int i; string t) write("%-40s %s\n", t, Standards.JSON.encode(tt[i]));
+	array prevtracks;
+	catch {prevtracks=decode_value(Stdio.read_file(intermediatedir + "prevtracks"));};
+	if (!prevtracks) prevtracks=({ });
+	int tottracks=max(sizeof(tracks),sizeof(prevtracks));
+	if (sizeof(tracks)<tottracks) tracks+=({""})*(tottracks-sizeof(tracks));
+	if (sizeof(prevtracks)<tottracks) prevtracks+=({""})*(tottracks-sizeof(prevtracks));
 	//Figure out the changes between the two versions
 	//Note that this copes poorly with insertions/deletions/moves, and will
 	//see a large number of changed tracks, and simply recreate them all.
