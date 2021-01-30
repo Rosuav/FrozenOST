@@ -157,7 +157,7 @@ int main(int argc,array(string) argv)
 		foreach (times[-1]/":",string part) ignoreto=(ignoreto*60)+(int)part; ignoreto+=ignorefrom;
 		ignorefrom*=1000; ignoreto*=1000; //TODO: Actually use subsecond resolution
 	}
-	if (argc>1 && argv[1]!="" && (modes[argv[1]] || trackdesc[argv[1]])) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
+	if (argc>1 && argv[1]!="" && (modes[argv[1]] || trackdesc[argv[1]] || argv[1] == "trackusage")) mode=argv[1]; //Override mode from command line if possible; ignore unrecognized args.
 	string trackfile = "tracks";
 	if (sscanf(argv[0], "%*sbuild_%[A-Za-z].pike%s", string fn, string empty) && fn && empty == "") trackfile = fn;
 	trackdata = Stdio.read_file(trackfile);
@@ -184,13 +184,7 @@ int main(int argc,array(string) argv)
 	constant trackidentifiers = "audiotracks.srt"; //Surtitles file identifying each track as it comes up
 	constant wordsandtracks = "words_and_tracks.srt"; //Merge of the above with the WordsFile
 
-	//From here on, we aren't using the parser yet (which means we're duplicating a lot of work)
-	//write("%O\n--------------\n", tracks);
-	tracks = Stdio.read_file(trackfile) / "\n"; //Lines of text
-	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
-	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
-	//write("%O\n--------------\n", tracks);
-	if (mode=="trackusage")
+	if (mode == "trackusage")
 	{
 		//Special: Instead of actually building anything, just run through the tracks
 		//and figure out which parts of the original files haven't been used. Contains
@@ -203,38 +197,36 @@ int main(int argc,array(string) argv)
 		//versions of tracks available instrumentally, and the credits song (which for
 		//some reason doesn't seem to fit, so there's a comments-only line in tracks).
 		array ostfiles = glob(sprintf(ost_glob, "*"), get_dir(vars->OST_dir));
-		mapping(string:array) partialusage=([]);
-		foreach (tracks,string t)
+		mapping(string:array) partialusage = ([]);
+		foreach (tracks, [string prefix, int pos, mapping tags])
 		{
-			array parts=t/" ";
-			if (parts[0] == "999" || parts[0] == "99") continue; //Ignore shine-through segments
-			ostfiles -= glob(sprintf(ost_glob, parts[0]), ostfiles);
-			string partial_start,partial_len;
-			if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0])
-			{
-				case 'S': partial_start=tag[1..]; break;
-				case 'L': partial_len=tag[1..]; break;
-				default: break;
-			}
-			if (!partial_start && !partial_len) continue; //Easy
-			if (!partialusage[parts[0]]) partialusage[parts[0]]=({ });
-			partialusage[parts[0]]+=({({(float)partial_start, partial_len && (float)partial_len})}); //Note that len will be the integer 0 if there's no length.
+			if (prefix == "999" || prefix == "99") continue; //Ignore shine-through segments
+			ostfiles -= glob(sprintf(ost_glob, prefix), ostfiles);
+			int partial_start, partial_len;
+			if (!tags->S && !tags->L) continue; //Easy
+			partialusage[prefix] += ({({tags->S && tags->S[0], tags->L ? tags->L[0] : -1})});
 		}
 		write("Unused files:\n%{%3.3s: all\n%}", sort(ostfiles));
-		foreach (sort(indices(partialusage)),string track)
+		foreach (sort(indices(partialusage)), string track)
 		{
-			float doneto=0.0;
-			array(string) errors=({ });
-			foreach (sort(partialusage[track]),[float start,float len])
+			int doneto = 0;
+			array(string) gaps = ({ });
+			foreach (sort(partialusage[track]), [int start, int len])
 			{
-				if (start-doneto>1.0) errors+=({sprintf("%f-%f",doneto||0.0,start)}); //Ignore gaps of up to a second, which are usually just skipping over the silence between sections
-				if (len) doneto=start+len; else doneto=-1.0; //There shouldn't be anything following a length-less entry
+				if (start - doneto > 1.0) gaps += ({sprintf("%f-%f", doneto/1000.0, start/1000.0)}); //Ignore gaps of up to a second, which are usually just skipping over the silence between sections
+				if (len) doneto = start + len; else doneto = -1; //There shouldn't be anything following a length-less entry
 			}
-			if (doneto!=-1.0) errors+=({sprintf("%f->end",doneto)});
-			if (sizeof(errors)) write("%s: %s\n",track,errors*", ");
+			if (doneto != -1) gaps += ({sprintf("%f->end", doneto/1000.0)});
+			if (sizeof(gaps)) write("%s: %s\n", track, gaps*", ");
 		}
 		return 0;
 	}
+	//From here on, we aren't using the parser yet (which means we're duplicating a lot of work)
+	array tt = tracks;
+	tracks = Stdio.read_file(trackfile) / "\n"; //Lines of text
+	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
+	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
+	foreach (tracks; int i; string t) write("%-40s %s\n", t, Standards.JSON.encode(tt[i]));
 	array(string) trackdefs=modes[mode];
 	if (!trackdefs)
 	{
