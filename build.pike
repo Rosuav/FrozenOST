@@ -134,8 +134,8 @@ array collection(mixed ... thing) {return thing;} //Gather all its args into a c
 array gather(array prev, string sep, mixed thing) {return prev + ({thing});} //Recursively gather more
 //Data type handling
 int seconds(string digits) {return 1000 * (int)digits;}
-int milliseconds(string digits) {return (int)((digits + "000")[..2]);}
-int sec_milli(string s, string _, string m) {return seconds(s) + milliseconds(m);}
+int milliseconds(string _, string digits) {return (int)((digits + "000")[..2]);}
+int sec_milli(string s, string _, string m) {return seconds(s) + milliseconds(".", m);}
 constant ABUT = 1<<30; int time_abut() {return ABUT;} //Sentinel to mean "up to the next" or "from where the prev ended"
 int time_minsec(string m, string _, int time) {return time + 60000 * (int)m;}
 int time_hms(string h, string _1, string m, string _2, int time) {return time + 60000 * (int)m + 3600000 * (int)h;}
@@ -280,12 +280,6 @@ int main(int argc,array(string) argv)
 				break;
 		}
 	}
-	//From here on, we aren't using the parser yet (which means we're duplicating a lot of work)
-	array tt = tracks;
-	tracks = Stdio.read_file(trackfile) / "\n"; //Lines of text
-	tracks=array_sscanf(tracks[*],"%[0-9] %[0-9:.] [%s]"); //Parsed: ({file prefix, start time[, tags]}) - add %*[;] at the beginning to include commented-out lines
-	tracks=tracks[*]*" "-({""}); //Recombined: "prefix start[ tags]". The tags are comma-delimited and begin with a key letter.
-	foreach (tracks; int i; string t) write("%-40s %s\n", t, Standards.JSON.encode(tt[i]));
 	array prevtracks;
 	catch {prevtracks = Standards.JSON.decode(Stdio.read_file(intermediatedir + "prevtracks"));};
 	if (!arrayp(prevtracks)) prevtracks = ({ });
@@ -307,7 +301,7 @@ int main(int argc,array(string) argv)
 		}
 		if (trackdelta > 0) {
 			//Insert shims to denote the places where new tracks get made
-			prevtracks = prevtracks[..<rear-1] + ({""}) * trackdelta + prevtracks[<rear-2..];
+			prevtracks = prevtracks[..<rear-1] + ({({"", 0, 0})}) * trackdelta + prevtracks[<rear-2..];
 			for (int t = sizeof(tracks) - 1; t > sizeof(tracks) - rear; --t)
 				mv(sprintf("%s%02d.wav", intermediatedir, t - trackdelta),
 					sprintf("%s%02d.wav", intermediatedir, t));
@@ -334,47 +328,27 @@ int main(int argc,array(string) argv)
 	int overlap=0,gap=0; int abuttals;
 	Stdio.File srt=Stdio.File(trackidentifiers,"wct");
 	int srtcnt=0;
-	for (int i=0;i<sizeof(tracks);++i)
+	foreach (tracks; int i; [string source, int startpos, mapping tags])
 	{
 		string outfn=sprintf("%02d.wav",i);
-		array parts=tracks[i]/" "; if (sizeof(parts)==1) parts+=({""});
-		if (parts[1]=="::") {verbose("%s: placing at %s\n",outfn,parts[1]=mstime(lastpos)); tracks[i]=parts*" ";} //Explicit abuttal - patch in the actual time, for the use of prevtracks
-		string prefix=parts[0],start=parts[1];
-		if (parts[0] == "99") parts[0] = "999";
-		if (parts[0] == "98") parts[0] = "998";
-		int startpos; foreach (start/":",string part) startpos=(startpos*60)+(int)part; //Figure out where this track starts - will round down to 1s resolution
-		startpos*=1000; if (has_value(start,'.')) startpos+=(int)((start/".")[-1]+"000")[..2]; //Patch in subsecond resolution by padding to exactly three digits
-		if (tracks[i]=="") {rm(intermediatedir + outfn); write("Removing %s\n",outfn); continue;} //Track list shortened - remove the last N tracks.
-		string partial_start,partial_len,temposhift,fade;
-		if (parts[0] == "999" || parts[0] == "998") {partial_start=parts[1]; prefix+="S"+startpos;}
-		int wordsmode=0,nonwordsmode=0;
-		int messmode=0,nonmessmode=0;
-		if (sizeof(parts)>2) foreach (parts[2]/",",string tag) if (tag!="") switch (tag[0]) //Process the tags, which may alter the prefix
-		{
-			case 'S': partial_start=tag[1..]; prefix+=tag; break;
-			case 'L':
-				if (tag=="L::")
-				{
-					//"Length up to where the next one starts"
-					//Ignores any tempo shift - don't use both together.
-					//Obviously incompatible with the next track starting at ::
-					//Code duplicated from the above
-					string next=(tracks[i+1]/" ")[1];
-					int nextpos; foreach (next/":",string part) nextpos=(nextpos*60)+(int)part;
-					int npos=nextpos*1000; if (has_value(next,'.')) npos+=(int)((next/".")[-1]+"000")[..2];
-					tag="L"+mstime(npos-startpos);
-				}
-				partial_len=tag[1..]; prefix+=tag;
-				break;
-			case 'T': temposhift=tag[1..]; break; //Note that this doesn't affect the prefix; also, the start/len times are before the tempo shift.
-			case 'F': fade=tag[1..]; break; //Passed directly to "sox fade": [type] fade-in-length [stop-time [fade-out-length]])
-			case 'I': nonwordsmode=1; break; //Instrumental track: skip on the "has words" soundtrack
-			case 'W': wordsmode=1; break; //Words track: skip on the "all instrumental" soundtrack
-			case 'N': nonmessmode=1; break; //Non-mess track: skip on the "has mess" soundtrack
-			case 'M': messmode=1; break; //Messy track: skip on the "avoid mess" soundtrack
-			default: break;
+		if (startpos == ABUT) verbose("%s: placing at %s\n", outfn, mstime(tracks[i][1] = startpos = lastpos)); //Explicit abuttal - patch in the actual time, for the use of prevtracks
+		if (source == "") {rm(intermediatedir + outfn); write("Removing %s\n", outfn); continue;} //Track list shortened - remove the last N tracks.
+		source = (["99": "999", "98": "998"])[source] || source;
+
+		string prefix = source;
+		int partial_start, partial_len;
+		if (prefix == "999" || prefix == "998") prefix += "S" + (partial_start = startpos);
+		if (tags->S) prefix += "S" + (partial_start = tags->S[0]);
+		if (tags->L) {
+			//"Length up to where the next one starts"
+			//Ignores any tempo shift - don't use both together.
+			//Obviously incompatible with the next track starting at ::
+			if (tags->L[0] == ABUT) partial_len = tracks[i + 1][1] - startpos;
+			else partial_len = tags->L[0];
+			prefix += "L" + partial_len;
 		}
-		if (tracks[i]!=prevtracks[i] || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
+
+		if (!equal(tracks[i], prevtracks[i]) || !has_value(dir,outfn)) //Changed, or file doesn't currently exist? Build.
 		{
 			rm(intermediatedir + outfn);
 
@@ -383,28 +357,28 @@ int main(int argc,array(string) argv)
 			if (!sizeof(in))
 			{
 				string fn;
-				if (parts[0]=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
-				else if (parts[0]=="998") {fn=alternate_soundtrack; infn=prefix+" movie alt sound track.wav";}
+				if (source=="999") {fn=tweaked_soundtrack; infn=prefix+" movie sound track.wav";}
+				else if (source=="998") {fn=alternate_soundtrack; infn=prefix+" movie alt sound track.wav";}
 				else
 				{
-					fn = glob(sprintf(ost_glob, parts[0]), ostfiles)[0]; //If it doesn't exist, bomb with a tidy exception.
+					fn = glob(sprintf(ost_glob, source), ostfiles)[0]; //If it doesn't exist, bomb with a tidy exception.
 					sscanf(fn, ost_desc, string basename);
 					infn=prefix+" "+basename+".wav";
 					fn = vars->OST_dir + "/" + fn;
 				}
 				write("Creating %s from MP3\n",infn);
 				array(string) args=({"ffmpeg","-i",fn});
-				if (partial_start) args+=({"-ss",partial_start});
-				if (partial_len) args+=({"-t",partial_len});
-				exec(args+({intermediatedir + infn}));
+				if (partial_start) args += ({"-ss", mstime(partial_start)});
+				if (partial_len) args += ({"-t", mstime(partial_len)});
+				exec(args + ({intermediatedir + infn}));
 				dir=get_dir(intermediatedir); if (!has_value(dir,infn)) exit(1,"Was not able to create %s - exiting\n",infn);
 			}
 			else infn=in[0];
 
-			write("%s %s: %s - %O\n",prevtracks[i]==""?"Creating":"Rebuilding",outfn,start,infn);
+			write("%s %s: %s - %O\n", prevtracks[i][0] == "" ? "Creating" : "Rebuilding", outfn, mstime(startpos), infn);
 			//eg: sox 111* 01.wav delay 0:00:05 0:00:05
-			array(string) args=({"sox", intermediatedir + infn, intermediatedir + outfn});
-			if (temposhift)
+			array(string) args = ({"sox", intermediatedir + infn, intermediatedir + outfn});
+			if (tags->T)
 			{
 				//When the tempo shift is very close to 1.0, the -l parameter
 				//gives better results (less audible distortion) than -m does,
@@ -416,18 +390,16 @@ int main(int argc,array(string) argv)
 				//as my cut-over point. If it's nearer than that (and since
 				//they both work just fine at that figure, I'm not bothered by
 				//floating-point issues and platform differences), I use -l.
-				float tempo=(float)temposhift;
-				if (tempo>.998 && tempo<1.002) args+=({"tempo","-l",temposhift});
-				else args+=({"tempo","-m",temposhift});
+				args += ({"tempo", (tags->T[0] > 998 && tags->T[0] < 1002) ? "-l" : "-m", mstime(tags->T[0])});
 			}
-			if (fade) args+=({"fade"})+fade/"/";
-			exec(args+({"delay",start,start}));
-			changed=1;
+			if (tags->F) args += ({"fade"}) + (array(string))(tags->F[*] / 1000);
+			exec(args + ({"delay", mstime(startpos), mstime(startpos)}));
+			changed = 1;
 		}
 		//Query the file's duration to get its effective end position
 		sscanf(Process.run(({"sox", "--i", "-D", intermediatedir + outfn}))->stdout, "%d.%s", int sec, string ms);
 		int endpos = sec*1000 + (int)(ms+"000")[..2];
-		if (!nonwordsmode && !nonmessmode) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
+		if (!tags->I && !tags->N) //Tracks tagged [Instrumental] exist only as alternates for corresponding [Words] tracks. Don't update lastpos, don't create subtitles records.
 		{
 			if (startpos>lastpos)
 			{
@@ -439,21 +411,21 @@ int main(int argc,array(string) argv)
 			else if (startpos==lastpos) verbose("%s: abut (#%d)\n",outfn,++abuttals);
 			else verbose("%s: overlap %s -> %s\n",outfn,mstime(lastpos-startpos),mstime(overlap+=lastpos-startpos));
 			lastpos=endpos;
-			string desc=parts[0];
-			array(string) files = glob(sprintf(ost_glob, parts[0]), ostfiles);
+			string desc = source;
+			array(string) files = glob(sprintf(ost_glob, source), ostfiles);
 			if (sizeof(files)) sscanf(files[0], ost_desc, desc);
-			if (parts[0]=="999") desc="Shine-through";
-			if (parts[0]=="998") desc="Shine-through (alt)";
+			if (source == "999") desc="Shine-through";
+			if (source == "998") desc="Shine-through (alt)";
 			srt->write("%d\n%s --> %s\n%[1]s - %[2]s\n%02d: %s\n\n",++srtcnt,srttime(startpos),srttime(endpos),i,desc);
 		}
 		if (ignoreto && ignoreto<startpos) continue; //Can't have any effect on the resulting sound, so elide it
 		if (endpos<ignorefrom) continue;
 		foreach (trackdefs;int i;string t)
 		{
-			if (has_value(t,'w') ? nonwordsmode : wordsmode) continue;
-			if (has_value(t,'m') ? nonmessmode : messmode) continue;
-			if (!has_value(t,'9') && parts[0]=="999") continue;
-			tracklist[i]+=({intermediatedir + outfn});
+			if (has_value(t,'w') ? tags->I : tags->W) continue;
+			if (has_value(t,'m') ? tags->N : tags->M) continue;
+			if (!has_value(t,'9') && (<"999", "998">)[source]) continue;
+			tracklist[i] += ({intermediatedir + outfn});
 		}
 	}
 	write("Total gap: %s\nTotal abutting tracks: %d\nTotal overlap: %s\nFinal position: %s\nNote that these figures may apply to only the beginning of the movie.\n",mstime(gap),abuttals,mstime(overlap),mstime(lastpos));
