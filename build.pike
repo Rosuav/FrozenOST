@@ -481,8 +481,8 @@ int main(int argc,array(string) argv)
 		srtzip->main(7, ({"srtzip.pike", "--clobber", "--index", "--reposition",
 			vars->WordsFile, trackidentifiers, wordsandtracks}));
 	};
-	//rm(vars->OutputFile);
-	//exec(({"ffmpeg"}) + inputs + map + times + ({"-c:v", "copy", vars->OutputFile}));
+	rm(vars->OutputFile);
+	exec(({"ffmpeg"}) + inputs + map + times + ({"-c:v", "copy", vars->OutputFile}));
 	Stdio.write_file(intermediatedir + "prevtracks", Standards.JSON.encode(tracks - ({""}), 7));
 	write("Total time: %.2fs\n", time(start));
 }
