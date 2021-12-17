@@ -161,7 +161,9 @@ int main(int argc,array(string) argv)
 	string trackfile = "tracks";
 	if (sscanf(argv[0], "%*sbuild_%[A-Za-z].pike%s", string fn, string empty) && fn && empty == "") trackfile = fn;
 	trackdata = Stdio.read_file(trackfile);
-	Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file("tracks.grammar");
+	string self = argv[0];
+	catch (self = combine_path(self, "../" + readlink(self))); //If argv[0] is a symlink, follow it to find the grammar file.
+	Parser.LR.Parser parser = Parser.LR.GrammarParser.make_parser_from_file(combine_path(self, "../tracks.grammar"));
 	array tracks = parser->parse(next, this) - ({0});
 	array missing = ({ }); foreach (vars; string name; string val) if (!val) missing += ({name});
 	if (sizeof(missing)) exit(1, "Must have " + String.implode_nicely(missing) + " directives in tracks file\n");
