@@ -122,6 +122,8 @@ mapping vars = ([
 	"WordsFile": "", //Optional - if absent, words-and-tracks won't be made.
 	"ShinethroughVolume": "", //Optional - if absent, shinethrough volume isn't changed
 ]);
+//TODO: Add a directive for the target audio sample rate, and convert everything to that instead of 44100
+//TODO: Add a directive to adjust audio volume of all OST segments
 array tracks = ({ });
 void setvar(string var, string colon, string val) {
 	if (!has_index(vars, var)) error("Unknown variable %O\n", var);
